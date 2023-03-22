@@ -5,6 +5,8 @@ import time
 from bs4 import BeautifulSoup
 from openpyxl import Workbook
 from PyPDF2 import PdfReader
+from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
 
 import path_url
 import reqs
@@ -28,6 +30,35 @@ def get_soup(response):
         return BeautifulSoup(response.content, "html.parser")
     else:
         print("Erreur lors de la récupération du contenu HTML")
+
+# Extraction données lbma
+def extract_lbma_data(soup):
+    chrome_options = webdriver.ChromeOptions()
+    chrome_options.add_argument('--headless')
+    chrome_options.add_argument('--no-sandbox')
+    browser = webdriver.Chrome(executable_path="C:/Users/adrie/OneDrive/Documents/chromedriver.exe", options=chrome_options)
+    browser.get('https://www.bing.com/news')
+
+    search = browser.find_element("name", "q")
+    print(search)
+    print([search.text, search.tag_name, search.id])
+
+    # on envoie à cet endroit le mot qu'on aurait tapé dans la barre de recherche
+    search.send_keys("Trump")
+
+    search_button = browser.find_element("xpath", "//input[@id='sb_form_go']") 
+    search_button.click()
+    if soup.find('table'):
+        print("table ok")
+        h1_element = soup.find("h1", {"class" : "tab-title"})
+        table_element = h1_element.find_next('table')
+        print(table_element)
+    else:
+        print('pas trouvé')
+    ws = wb.create_sheet('LBMA')
+    ws.append(['Index', 'AM', 'PM'])
+
+
 
 # Extraction données Cookson
 def extract_cookson_data(soup):
@@ -158,17 +189,18 @@ def delete_pdfs():
 if __name__ == '__main__':
     print("Début du process")
     wb = Workbook()
-    extract_cookson_data(get_soup(reqs.response_cookson))
-    extract_kme_data(get_soup(reqs.response_kme))
-    extract_wieland_data(get_soup(reqs.response_wieland))
-    download_pdf(reqs.response_reynolds, path_url.name_reynolds, path_url.download_path)
-    extract_reynolds_data(path_url.name_reynolds, wb)
-    download_pdf(reqs.response_materion, path_url.name_materion, path_url.download_path)
-    extract_materion_data(path_url.name_materion)
-    delete_pdfs()
+    extract_lbma_data(get_soup(reqs.response_lbma))
+    #extract_cookson_data(get_soup(reqs.response_cookson))
+    #extract_kme_data(get_soup(reqs.response_kme))
+    #extract_wieland_data(get_soup(reqs.response_wieland))
+    #download_pdf(reqs.response_reynolds, path_url.name_reynolds, path_url.download_path)
+    #extract_reynolds_data(path_url.name_reynolds, wb)
+    #download_pdf(reqs.response_materion, path_url.name_materion, path_url.download_path)
+    #extract_materion_data(path_url.name_materion)
+    #delete_pdfs()
 
-    file_path = os.path.join(path_url.excel_path, 'metals_prices.xlsx')
-    wb.save(file_path)
-    print('Fichier excel créé avec succès !')
+    #file_path = os.path.join(path_url.excel_path, 'metals_prices.xlsx')
+    #wb.save(file_path)
+    #print('Fichier excel créé avec succès !')
     print('Fin du process')
     time.sleep(3)

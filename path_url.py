@@ -3,6 +3,7 @@ url_kme = 'https://www.kme.com/en/services/metal-prices'
 url_wieland = 'https://www.wieland.com/en/resources/metal-information#metal-information'
 url_reynolds = "https://reynolds-cuivre.fr/wp-content/uploads/2017/09/Cours_metaux_template.pdf"
 url_materion = 'https://materion.de.com:443/-/media/files/german/metalvaluepostingfile.pdf'
+url_lbma = "https://www.lbma.org.uk/prices-and-data/precious-metal-prices#"
 
 download_path = "C:/Users/adrie/Documents"
 name_reynolds = "Cours_metaux_template.pdf"
