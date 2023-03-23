@@ -49,11 +49,12 @@ def extract_lbma_data(soup):
 
     table = browser.find_elements(By.XPATH, "/html/body/div[1]/main/div[1]/div/div/div/div/div[2]/div/div[2]/div[4]/table")
     rows = browser.find_elements(By.XPATH, '/html/body/div[1]/main/div[1]/div/div/div/div/div[2]/div/div[2]/div[4]/table/tbody/tr[1]')
+
     for row in rows:
         cells = browser.find_elements(By.TAG_NAME, 'td')
-        for cell in cells:
+        for i, cell in enumerate(cells):
             print(cell.text)
-            ws.append(cell.text)
+            ws.cell(row=1, column=i+1, value=cell.text)
 
 
 
