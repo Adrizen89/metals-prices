@@ -6,7 +6,11 @@ from bs4 import BeautifulSoup
 from openpyxl import Workbook
 from PyPDF2 import PdfReader
 from selenium import webdriver
-from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
 
 import path_url
 import reqs
@@ -33,30 +37,23 @@ def get_soup(response):
 
 # Extraction données lbma
 def extract_lbma_data(soup):
-    chrome_options = webdriver.ChromeOptions()
-    chrome_options.add_argument('--headless')
-    chrome_options.add_argument('--no-sandbox')
-    browser = webdriver.Chrome(executable_path="C:/Users/adrie/OneDrive/Documents/chromedriver.exe", options=chrome_options)
-    browser.get('https://www.bing.com/news')
-
-    search = browser.find_element("name", "q")
-    print(search)
-    print([search.text, search.tag_name, search.id])
-
-    # on envoie à cet endroit le mot qu'on aurait tapé dans la barre de recherche
-    search.send_keys("Trump")
-
-    search_button = browser.find_element("xpath", "//input[@id='sb_form_go']") 
-    search_button.click()
-    if soup.find('table'):
-        print("table ok")
-        h1_element = soup.find("h1", {"class" : "tab-title"})
-        table_element = h1_element.find_next('table')
-        print(table_element)
-    else:
-        print('pas trouvé')
     ws = wb.create_sheet('LBMA')
     ws.append(['Index', 'AM', 'PM'])
+    s=Service('C:/Users/adrie/OneDrive/Documents/chromedriver.exe')
+    browser = webdriver.Chrome(service=s)
+    url='https://www.lbma.org.uk/prices-and-data/precious-metal-prices#/table'
+    browser.get(url)
+    browser.maximize_window()
+    time.sleep(5)
+    table_path = "/html/body/div[1]/main/div[1]/div/div/div/div/div[2]/div/div[2]/div[4]/table"
+
+    table = browser.find_elements(By.XPATH, "/html/body/div[1]/main/div[1]/div/div/div/div/div[2]/div/div[2]/div[4]/table")
+    rows = browser.find_elements(By.XPATH, '/html/body/div[1]/main/div[1]/div/div/div/div/div[2]/div/div[2]/div[4]/table/tbody/tr[1]')
+    for row in rows:
+        cells = browser.find_elements(By.TAG_NAME, 'td')
+        for cell in cells:
+            print(cell.text)
+            ws.append(cell.text)
 
 
 
@@ -199,8 +196,8 @@ if __name__ == '__main__':
     #extract_materion_data(path_url.name_materion)
     #delete_pdfs()
 
-    #file_path = os.path.join(path_url.excel_path, 'metals_prices.xlsx')
-    #wb.save(file_path)
-    #print('Fichier excel créé avec succès !')
+    file_path = os.path.join(path_url.excel_path, 'metals_prices.xlsx')
+    wb.save(file_path)
+    print('Fichier excel créé avec succès !')
     print('Fin du process')
     time.sleep(3)
