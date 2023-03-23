@@ -38,7 +38,7 @@ def get_soup(response):
 # Extraction données lbma
 def extract_lbma_data(soup):
     ws = wb.create_sheet('LBMA')
-    ws.append(['Index', 'AM', 'PM'])
+    ws.append(['Index', 'AM $', 'PM $', 'AM £', 'PM £', 'AM €', 'PM €' ])
     s=Service('C:/Users/adrie/OneDrive/Documents/chromedriver.exe')
     browser = webdriver.Chrome(service=s)
     url='https://www.lbma.org.uk/prices-and-data/precious-metal-prices#/table'
@@ -50,11 +50,23 @@ def extract_lbma_data(soup):
     table = browser.find_elements(By.XPATH, "/html/body/div[1]/main/div[1]/div/div/div/div/div[2]/div/div[2]/div[4]/table")
     rows = browser.find_elements(By.XPATH, '/html/body/div[1]/main/div[1]/div/div/div/div/div[2]/div/div[2]/div[4]/table/tbody/tr[1]')
 
+    current_date = ""
+    row_count = 1
     for row in rows:
-        cells = browser.find_elements(By.TAG_NAME, 'td')
-        for i, cell in enumerate(cells):
-            print(cell.text)
-            ws.cell(row=1, column=i+1, value=cell.text)
+        cells = row.find_elements(By.TAG_NAME, 'td')
+        if len(cells) == 1: # New date row
+            current_date = cells[0].text
+            row_count += 1
+            ws.cell(row=row_count, column=1, value=current_date)
+        else: # Data row
+            row_count += 1
+            for i, cell in enumerate(cells):
+                if i == 0: # Date column
+                    current_date = cell.text
+                    ws.cell(row=row_count, column=1, value=current_date)
+                else:
+                    value = cell.text.replace(',', '')
+                    ws.cell(row=row_count, column=i+1, value=value)
 
 
 
@@ -85,7 +97,7 @@ def extract_kme_data(soup):
     """Extraire les données de la table KME et les ajouter au classeur Excel"""
     table = soup.find('table', class_='table table-condensed table-hover table-striped')
     ws = wb.create_sheet('KME')
-    ws.append(['Index', 'Prix', 'Devise'])
+    ws.append(['Index', 'Unit', 'Prix'])
 
     for row in table.find_all('tr'):
         data = []
@@ -124,21 +136,17 @@ def extract_reynolds_data(name_reynolds, wb):
             # Séparer les données en colonnes
             data = line.split()
             if "EUR/USD" in data:
-                if data[1].isdigit():
-                    data[1] = float(data[1])
-                else:
-                    data[1] = data[1].replace(',', '.')
+                data[1] = data[1].replace(',', '.')
                 # Si "EUR/USD" est trouvé, on a seulement 3 colonnes
-                wr.append([data[0], float(data[1]), data[2]])
+                wr.append([data[0], data[1], data[2]])
             elif len(data) == 4:
                 # Ajouter "1 TO" à la 4ème colonne
                 if data[0] not in ["LME", "BASE", "METAL", "France"] and data[1] not in ["LME", "BASE", "METAL", "France"]:
-                    if data[1].isdigit():
-                        data[1] = float(data[1])
-                    else:
+                    if "," in data[1]:
                         data[1] = data[1].replace(',', '.')
+                    else: data[1] = float(data[1])
                     # Ajouter "1 TO" à la 4ème colonne
-                    wr.append([data[0], float(data[1]), data[2], data[3]])
+                    wr.append([data[0], data[1], data[2], data[3]])
                 else:
                     # Si la dernière colonne ne contient pas "1 TO", ajouter "1 TO" à la 4ème colonne
                     if data[0] not in ["LME", "BASE", "METAL", "France"]:
@@ -188,14 +196,14 @@ if __name__ == '__main__':
     print("Début du process")
     wb = Workbook()
     extract_lbma_data(get_soup(reqs.response_lbma))
-    #extract_cookson_data(get_soup(reqs.response_cookson))
-    #extract_kme_data(get_soup(reqs.response_kme))
-    #extract_wieland_data(get_soup(reqs.response_wieland))
-    #download_pdf(reqs.response_reynolds, path_url.name_reynolds, path_url.download_path)
-    #extract_reynolds_data(path_url.name_reynolds, wb)
-    #download_pdf(reqs.response_materion, path_url.name_materion, path_url.download_path)
-    #extract_materion_data(path_url.name_materion)
-    #delete_pdfs()
+    extract_cookson_data(get_soup(reqs.response_cookson))
+    extract_kme_data(get_soup(reqs.response_kme))
+    extract_wieland_data(get_soup(reqs.response_wieland))
+    download_pdf(reqs.response_reynolds, path_url.name_reynolds, path_url.download_path)
+    extract_reynolds_data(path_url.name_reynolds, wb)
+    download_pdf(reqs.response_materion, path_url.name_materion, path_url.download_path)
+    extract_materion_data(path_url.name_materion)
+    delete_pdfs()
 
     file_path = os.path.join(path_url.excel_path, 'metals_prices.xlsx')
     wb.save(file_path)
