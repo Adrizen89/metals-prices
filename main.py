@@ -89,7 +89,7 @@ def extract_cookson_data(soup):
             columns[0] = column_2
 
         columns = [column.text.replace('€', '').replace('$', '').replace(',', '.') for column in columns]
-
+        columns.reverse()
         ws.append(columns)
 
 # Extraction données KME
@@ -97,14 +97,13 @@ def extract_kme_data(soup):
     """Extraire les données de la table KME et les ajouter au classeur Excel"""
     table = soup.find('table', class_='table table-condensed table-hover table-striped')
     ws = wb.create_sheet('KME')
-    ws.append(['Index', 'Unit', 'Prix'])
 
     for row in table.find_all('tr'):
         data = []
-        for cell in row.find_all('td')[:3]:
-            data.append(cell.text.strip().replace('*', '').replace('.', '').replace(',', '.'))
-        if len(data) == 3:
-            ws.append(data)
+        for cell in row.find_all('td')[:4]:
+            data.append(cell.text.strip())
+        if len(data) == 4:
+            ws.append([data[3], data[1], data[2].replace('*', '').replace('.', '').replace(',', '.')])
 
 # Extraction données Wieland
 def extract_wieland_data(soup):
@@ -114,9 +113,11 @@ def extract_wieland_data(soup):
     ws.append(['Index', 'Prix', 'Devise'])
 
     for row in table.find_all('tr'):
-        columns = row.find_all("td")[:3]
-
-        ws.append([column.text.replace(',', '') for column in columns])
+        data = []
+        for cell in row.find_all("td")[:3]:
+            data.append(cell.text.strip())
+        if len(data) == 3:
+            ws.append([data[2], data[1].replace(',', '')])
 
 # Extraction données Reynolds
 def extract_reynolds_data(name_reynolds, wb):
