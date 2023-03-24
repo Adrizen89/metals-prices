@@ -35,10 +35,10 @@ def get_soup(response):
     else:
         print("Erreur lors de la récupération du contenu HTML")
 
-# Extraction données lbma
-def extract_lbma_data(soup):
-    ws = wb.create_sheet('LBMA')
-    ws.append(['Index', 'AM $', 'PM $', 'AM £', 'PM £', 'AM €', 'PM €' ])
+# Extraction données lbma pour 1AG2
+def extract_1AG2_data(soup):
+    ws = wb.create_sheet('1AG2')
+    ws.append(['Ag LBMA' ])
     s=Service('C:/Users/adrie/OneDrive/Documents/chromedriver.exe')
     browser = webdriver.Chrome(service=s)
     url='https://www.lbma.org.uk/prices-and-data/precious-metal-prices#/table'
@@ -49,24 +49,19 @@ def extract_lbma_data(soup):
 
     table = browser.find_elements(By.XPATH, "/html/body/div[1]/main/div[1]/div/div/div/div/div[2]/div/div[2]/div[4]/table")
     rows = browser.find_elements(By.XPATH, '/html/body/div[1]/main/div[1]/div/div/div/div/div[2]/div/div[2]/div[4]/table/tbody/tr[1]')
+    drop = browser.find_elements(By.CLASS_NAME, 'dropdown-toggle')
+    drop[0].click()
+    a_drop = browser.find_elements(By.LINK_TEXT, 'Silver')
+    a_drop[0].click()
+    time.sleep(4)
 
-    current_date = ""
-    row_count = 1
     for row in rows:
-        cells = row.find_elements(By.TAG_NAME, 'td')
-        if len(cells) == 1: # New date row
-            current_date = cells[0].text
-            row_count += 1
-            ws.cell(row=row_count, column=1, value=current_date)
-        else: # Data row
-            row_count += 1
-            for i, cell in enumerate(cells):
-                if i == 0: # Date column
-                    current_date = cell.text
-                    ws.cell(row=row_count, column=1, value=current_date)
-                else:
-                    value = cell.text.replace(',', '')
-                    ws.cell(row=row_count, column=i+1, value=value)
+        cells = row.find_elements(By.XPATH, '/html/body/div[1]/main/div[1]/div/div/div/div/div[2]/div/div[2]/div[4]/table/tbody/tr[1]/td[2]')
+        for cell in (cells):
+            print(cell.text)
+            ws['A2'] = 'AG'
+            ws['B2'] = cell.text.replace('.', ',')
+            ws['C2'] = '$'
 
 # Extraction données lbma pour 1AU2
 def extract_1AU2_data(soup):
@@ -83,23 +78,13 @@ def extract_1AU2_data(soup):
     table = browser.find_elements(By.XPATH, "/html/body/div[1]/main/div[1]/div/div/div/div/div[2]/div/div[2]/div[4]/table")
     rows = browser.find_elements(By.XPATH, '/html/body/div[1]/main/div[1]/div/div/div/div/div[2]/div/div[2]/div[4]/table/tbody/tr[1]')
 
-    current_date = ""
-    row_count = 1
     for row in rows:
-        cells = row.find_elements(By.TAG_NAME, 'td')
-        if len(cells) == 1: # New date row
-            current_date = cells[0].text
-            row_count += 1
-            ws.cell(row=row_count, column=1, value=current_date)
-        else: # Data row
-            row_count += 1
-            for i, cell in enumerate(cells):
-                if i == 0: # Date column
-                    current_date = cell.text
-                    ws.cell(row=row_count, column=1, value=current_date)
-                else:
-                    value = cell.text.replace(',', '')
-                    ws.cell(row=row_count, column=i+1, value=value)
+        cells = row.find_elements(By.XPATH, '/html/body/div[1]/main/div[1]/div/div/div/div/div[2]/div/div[2]/div[4]/table/tbody/tr[1]/td[3]')
+        for cell in (cells):
+            print(cell.text)
+            ws['A2'] = 'AU'
+            ws['B2'] = cell.text.replace('.', ',')
+            ws['C2'] = '$'
 
 
 
@@ -121,7 +106,7 @@ def extract_1AG1_data(soup):
     data = fourth_column.text.strip()
 
     ws['A2'] = 'AG'
-    ws['B2'] = data
+    ws['B2'] = data.replace('.', ',')
     ws['C2'] = '€'
 
 # Extraction données Cookson pour 1AU3
@@ -143,7 +128,7 @@ def extract_1AU3_data(soup):
 
     print(data)
     ws['A2'] = 'AU'
-    ws['B2'] = data
+    ws['B2'] = data.replace('.', ',').replace('€', '')
     ws['C2'] = '€'
 
 
@@ -165,8 +150,8 @@ def extract_1AG3_data(soup):
     data = fourth_column.text.strip()
     print(data)
 
-    ws['A2'] = 'AU'
-    ws['B2'] = data
+    ws['A2'] = 'AG'
+    ws['B2'] = data.replace('.', ',')
     ws['C2'] = '€'
 
 # Extraction données pour 2M37
@@ -188,7 +173,7 @@ def extract_2M37_data(soup):
     print(data)
 
     ws['A2'] = 'CuZn37/38'
-    ws['B2'] = data
+    ws['B2'] = data.replace('.', ',')
     ws['C2'] = '€'
 
 # Extraction données pour 3AL1
@@ -210,7 +195,7 @@ def extract_3AL1_data(soup):
     print(data)
 
     ws['A2'] = 'AL'
-    ws['B2'] = data
+    ws['B2'] = data.replace(',', '').replace('.', ',')
     ws['C2'] = '$'
 
 # Extraction données pour 3CU1
@@ -232,7 +217,7 @@ def extract_3CU1_data(soup):
     print(data)
 
     ws['A2'] = 'CU'
-    ws['B2'] = data
+    ws['B2'] = data.replace(',', '').replace('.', ',')
     ws['C2'] = '$'
 
 # Extraction données pour 3CU3
@@ -254,7 +239,7 @@ def extract_3CU3_data(soup):
     print(data)
 
     ws['A2'] = 'CU'
-    ws['B2'] = data
+    ws['B2'] = data.replace('.', ',')
     ws['C2'] = '€'
 
 # Extraction données KME
@@ -361,9 +346,10 @@ def delete_pdfs():
 if __name__ == '__main__':
     print("Début du process")
     wb = Workbook()
-    #extract_lbma_data(get_soup(reqs.response_lbma))
-    #extract_1AG1_data(get_soup(reqs.response_cookson))
-    #extract_1AU3_data(get_soup(reqs.response_))
+    extract_1AG2_data(get_soup(reqs.response_lbma))
+    extract_1AU2_data(get_soup(reqs.response_lbma))
+    extract_1AG1_data(get_soup(reqs.response_cookson))
+    extract_1AU3_data(get_soup(reqs.response_cookson))
     #extract_kme_data(get_soup(reqs.response_kme))
     extract_1AG3_data(get_soup(reqs.response_1AG3))
     extract_2M37_data(get_soup(reqs.response_2M37))
