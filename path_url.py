@@ -4,6 +4,11 @@ url_wieland = 'https://www.wieland.com/en/resources/metal-information#metal-info
 url_reynolds = "https://reynolds-cuivre.fr/wp-content/uploads/2017/09/Cours_metaux_template.pdf"
 url_materion = 'https://materion.de.com:443/-/media/files/german/metalvaluepostingfile.pdf'
 url_lbma = "https://www.lbma.org.uk/prices-and-data/precious-metal-prices#"
+url_1AG3 = "https://www.westmetall.com/en/markdaten.php?action=table&field=Ag"
+url_2M37 = "https://www.westmetall.com/en/markdaten.php?action=table&field=MB_MS_63_37"
+url_3AL1 = "https://www.westmetall.com/en/markdaten.php?action=average&field=LME_AI_cash"
+url_3CU1 = "https://www.westmetall.com/en/markdaten.php?action=table&field=LME_Cu_cash"
+url_3CU3 = "https://www.westmetall.com/en/markdaten.php?action=table&field=WI_Cu"
 
 download_path = "C:/Users/adrie/Documents"
 name_reynolds = "Cours_metaux_template.pdf"

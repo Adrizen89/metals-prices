@@ -68,29 +68,194 @@ def extract_lbma_data(soup):
                     value = cell.text.replace(',', '')
                     ws.cell(row=row_count, column=i+1, value=value)
 
+# Extraction données lbma pour 1AU2
+def extract_1AU2_data(soup):
+    ws = wb.create_sheet('1AU2')
+    ws.append(['Au LBMA'])
+    s=Service('C:/Users/adrie/OneDrive/Documents/chromedriver.exe')
+    browser = webdriver.Chrome(service=s)
+    url='https://www.lbma.org.uk/prices-and-data/precious-metal-prices#/table'
+    browser.get(url)
+    browser.maximize_window()
+    time.sleep(5)
+    table_path = "/html/body/div[1]/main/div[1]/div/div/div/div/div[2]/div/div[2]/div[4]/table"
+
+    table = browser.find_elements(By.XPATH, "/html/body/div[1]/main/div[1]/div/div/div/div/div[2]/div/div[2]/div[4]/table")
+    rows = browser.find_elements(By.XPATH, '/html/body/div[1]/main/div[1]/div/div/div/div/div[2]/div/div[2]/div[4]/table/tbody/tr[1]')
+
+    current_date = ""
+    row_count = 1
+    for row in rows:
+        cells = row.find_elements(By.TAG_NAME, 'td')
+        if len(cells) == 1: # New date row
+            current_date = cells[0].text
+            row_count += 1
+            ws.cell(row=row_count, column=1, value=current_date)
+        else: # Data row
+            row_count += 1
+            for i, cell in enumerate(cells):
+                if i == 0: # Date column
+                    current_date = cell.text
+                    ws.cell(row=row_count, column=1, value=current_date)
+                else:
+                    value = cell.text.replace(',', '')
+                    ws.cell(row=row_count, column=i+1, value=value)
 
 
-# Extraction données Cookson
-def extract_cookson_data(soup):
+
+# Extraction données Cookson pour 1AG1
+def extract_1AG1_data(soup):
     """Extraire les données de la table Cookson et les ajouter au classeur Excel"""
     table = soup.find("table", {"class": "main"})
-    ws = wb.create_sheet('Cookson')
-    ws.append(['Index', '1er fixing USD/oz', '1er fixing EUR/Kg', '2ème fixing EUR/Kg'])
+    ws = wb.create_sheet('1AG1')
+    ws.append(['Ag c3E'])
 
-    for row in table.find_all("tr"):
-        columns = row.find_all("td")[1:]
+    rows = soup.find_all("tr")
+    second_row = rows[3]
 
-        for i in range(1, 3):
-            if any(c.isalpha() for c in columns[i].text):
-                columns[i] = "-"
-            column_2 = columns[0]
-            if column_2.a:
-                column_2.a.extract()
-            columns[0] = column_2
+    # Trouver la quatrième colonne de la table dans la deuxième ligne
+    columns = second_row.find_all("td")
+    fourth_column = columns[4]
 
-        columns = [column.text.replace('€', '').replace('$', '').replace(',', '.') for column in columns]
-        columns.reverse()
-        ws.append(columns)
+    # Extraire le texte de la quatrième colonne
+    data = fourth_column.text.strip()
+
+    ws['A2'] = 'AG'
+    ws['B2'] = data
+    ws['C2'] = '€'
+
+# Extraction données Cookson pour 1AU3
+def extract_1AU3_data(soup):
+    """Extraire les données de la table Cookson et les ajouter au classeur Excel"""
+    table = soup.find("table", {"class": "main"})
+    ws = wb.create_sheet('1AU3')
+    ws.append(['Au Industriel'])
+
+    rows = soup.find_all("tr")
+    second_row = rows[2]
+
+    # Trouver la quatrième colonne de la table dans la deuxième ligne
+    columns = second_row.find_all("td")
+    last_column = columns[4]
+
+    # Extraire le texte de la quatrième colonne
+    data = last_column.text.strip()
+
+    print(data)
+    ws['A2'] = 'AU'
+    ws['B2'] = data
+    ws['C2'] = '€'
+
+
+# Extraction données pour 1AG3
+def extract_1AG3_data(soup):
+    """Extraire les données de la table Cookson et les ajouter au classeur Excel"""
+    table = soup.find("table")
+    ws = wb.create_sheet('1AG3')
+    ws.append(['Ag Westmetall (Finesliber)'])
+
+    rows = soup.find_all("tr")
+    second_row = rows[1]
+
+    # Trouver la quatrième colonne de la table dans la deuxième ligne
+    columns = second_row.find_all("td")
+    fourth_column = columns[1]
+
+    # Extraire le texte de la quatrième colonne
+    data = fourth_column.text.strip()
+    print(data)
+
+    ws['A2'] = 'AU'
+    ws['B2'] = data
+    ws['C2'] = '€'
+
+# Extraction données pour 2M37
+def extract_2M37_data(soup):
+    """Extraire les données de la table Cookson et les ajouter au classeur Excel"""
+    table = soup.find("table")
+    ws = wb.create_sheet('2M37')
+    ws.append(['Metalrate CuZn37/38'])
+
+    rows = soup.find_all("tr")
+    second_row = rows[1]
+
+    # Trouver la quatrième colonne de la table dans la deuxième ligne
+    columns = second_row.find_all("td")
+    fourth_column = columns[1]
+
+    # Extraire le texte de la quatrième colonne
+    data = fourth_column.text.strip()
+    print(data)
+
+    ws['A2'] = 'CuZn37/38'
+    ws['B2'] = data
+    ws['C2'] = '€'
+
+# Extraction données pour 3AL1
+def extract_3AL1_data(soup):
+    """Extraire les données de la table Cookson et les ajouter au classeur Excel"""
+    table = soup.find("table")
+    ws = wb.create_sheet('3AL1')
+    ws.append(['LME Settlement Aluminium'])
+
+    rows = soup.find_all("tr")
+    second_row = rows[6]
+
+    # Trouver la quatrième colonne de la table dans la deuxième ligne
+    columns = second_row.find_all("td")
+    fourth_column = columns[1]
+
+    # Extraire le texte de la quatrième colonne
+    data = fourth_column.text.strip()
+    print(data)
+
+    ws['A2'] = 'AL'
+    ws['B2'] = data
+    ws['C2'] = '$'
+
+# Extraction données pour 3CU1
+def extract_3CU1_data(soup):
+    """Extraire les données de la table Cookson et les ajouter au classeur Excel"""
+    table = soup.find("table")
+    ws = wb.create_sheet('3CU1')
+    ws.append(['LME Settlement Copper'])
+
+    rows = soup.find_all("tr")
+    second_row = rows[1]
+
+    # Trouver la quatrième colonne de la table dans la deuxième ligne
+    columns = second_row.find_all("td")
+    fourth_column = columns[1]
+
+    # Extraire le texte de la quatrième colonne
+    data = fourth_column.text.strip()
+    print(data)
+
+    ws['A2'] = 'CU'
+    ws['B2'] = data
+    ws['C2'] = '$'
+
+# Extraction données pour 3CU3
+def extract_3CU3_data(soup):
+    """Extraire les données de la table Cookson et les ajouter au classeur Excel"""
+    table = soup.find("table")
+    ws = wb.create_sheet('3CU3')
+    ws.append(['Wieland Kopper'])
+
+    rows = soup.find_all("tr")
+    second_row = rows[1]
+
+    # Trouver la quatrième colonne de la table dans la deuxième ligne
+    columns = second_row.find_all("td")
+    fourth_column = columns[1]
+
+    # Extraire le texte de la quatrième colonne
+    data = fourth_column.text.strip()
+    print(data)
+
+    ws['A2'] = 'CU'
+    ws['B2'] = data
+    ws['C2'] = '€'
 
 # Extraction données KME
 def extract_kme_data(soup):
@@ -196,15 +361,21 @@ def delete_pdfs():
 if __name__ == '__main__':
     print("Début du process")
     wb = Workbook()
-    extract_lbma_data(get_soup(reqs.response_lbma))
-    extract_cookson_data(get_soup(reqs.response_cookson))
-    extract_kme_data(get_soup(reqs.response_kme))
-    extract_wieland_data(get_soup(reqs.response_wieland))
-    download_pdf(reqs.response_reynolds, path_url.name_reynolds, path_url.download_path)
-    extract_reynolds_data(path_url.name_reynolds, wb)
-    download_pdf(reqs.response_materion, path_url.name_materion, path_url.download_path)
-    extract_materion_data(path_url.name_materion)
-    delete_pdfs()
+    #extract_lbma_data(get_soup(reqs.response_lbma))
+    #extract_1AG1_data(get_soup(reqs.response_cookson))
+    #extract_1AU3_data(get_soup(reqs.response_))
+    #extract_kme_data(get_soup(reqs.response_kme))
+    extract_1AG3_data(get_soup(reqs.response_1AG3))
+    extract_2M37_data(get_soup(reqs.response_2M37))
+    extract_3AL1_data(get_soup(reqs.response_3AL1))
+    extract_3CU1_data(get_soup(reqs.response_3CU1))
+    extract_3CU3_data(get_soup(reqs.response_3CU3))
+    #extract_wieland_data(get_soup(reqs.response_wieland))
+    #download_pdf(reqs.response_reynolds, path_url.name_reynolds, path_url.download_path)
+    #extract_reynolds_data(path_url.name_reynolds, wb)
+    #download_pdf(reqs.response_materion, path_url.name_materion, path_url.download_path)
+    #extract_materion_data(path_url.name_materion)
+    #delete_pdfs()
 
     file_path = os.path.join(path_url.excel_path, 'metals_prices.xlsx')
     wb.save(file_path)
