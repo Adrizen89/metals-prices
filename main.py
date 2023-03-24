@@ -342,6 +342,40 @@ def delete_pdfs():
     except Exception as e:
         print(f"Une erreur s'est produite : {e}")
 
+# Extraction AURUBIS
+
+# Extraction NOVAPROFIL
+
+# Extraction INOVAN
+
+# Extraction PROFILTECH
+
+# Extraction WIELAND
+
+# Extraction MATERION
+
+# Extraction R-METAL
+
+# Extraction SUNDWIGER
+
+# Extraction ARS
+
+# Extraction THERMOCOMPACT
+
+# Extraction RICHARD STENZHORN
+
+# Extraction AD-PLATING
+
+# Extraction KME
+
+# Extraction PEM
+
+# Extraction GRISET
+
+# Extraction LEGENI
+
+# Extraction DPE
+
 # Lancement du process
 if __name__ == '__main__':
     print("Début du process")

@@ -10,6 +10,26 @@ url_3AL1 = "https://www.westmetall.com/en/markdaten.php?action=average&field=LME
 url_3CU1 = "https://www.westmetall.com/en/markdaten.php?action=table&field=LME_Cu_cash"
 url_3CU3 = "https://www.westmetall.com/en/markdaten.php?action=table&field=WI_Cu"
 
+# url achat
+url_aurubis = "www.kme.com/en/services/metal-prices"
+url_novaprofil = "https://www.wieland.com/en/resources/metal-information#metal-information"
+url_inovan = "https://www.wieland.com/de/ressourcen/metallinformation#tab-general"
+url_profiltech = "https://www.kme.com/fr/services/cours-des-metaux"
+url_wieland = "https://www.wieland.com/en/resources/metal-information#metal-information"
+url_materion = "https://materion.de.com:443/-/media/files/german/metalvaluepostingfile.pdf"
+url_rmetal = "https://www.kme.com/fr/services/cours-des-metaux"
+url_sundwiger = "https://www.sundwiger-mw.com/en/"
+url_ars = "www.kme.com/en/services/metal-prices"
+url_thermocompact = "https://www.cookson-clal.com/cours/"
+url_richard = "https://www.wieland.com/en/resources/metal-information"
+url_adplating = "https://www.lbma.org.uk/prices-and-data/precious-metal-prices#"
+url_kme = "https://www.kme.com/fr/services/cours-des-metaux"
+url_pem = ""
+url_griset = "https://www.kme.com/fr/services/cours-des-metaux"
+url_legeni = "https://www.cookson-clal.com/cours/"
+url_dpe = ""
+
+
 download_path = "C:/Users/adrie/Documents"
 name_reynolds = "Cours_metaux_template.pdf"
 folder_reynolds = f"{download_path}/{name_reynolds}"
