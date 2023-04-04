@@ -342,54 +342,118 @@ def delete_pdfs():
     except Exception as e:
         print(f"Une erreur s'est produite : {e}")
 
-# Extraction AURUBIS
+# Extraction AURUBIS CuSn0, 15
+# Extraction AURUBIS Cu-ETP
+# Extraction AURUBIS CuFe0, 1P
+# Extraction AURUBIS Cu-DLP
 
-# Extraction NOVAPROFIL
+# Extraction NOVAPROFIL CuZn30
+# Extraction NOVAPROFIL CuZn33
+# Extraction NOVAPROFIL CuZn36
+# Extraction NOVAPROFIL CuZn37
 
-# Extraction INOVAN
+# Extraction INOVAN Cu Invar Cu
+# Extraction INOVAN Cu-OF
 
-# Extraction PROFILTECH
+# Extraction PROFILTECH CuBe1,9
+# Extraction PROFILTECH CuSn6P
+# Extraction PROFILTECH Cu-PHC
 
-# Extraction WIELAND
 
-# Extraction MATERION
+# Extraction WIELAND CuSn6
+# Extraction WIELAND Cu-ETP
+# Extraction WIELAND Cu-OF
+# Extraction WIELAND Cu-OFE
+# Extraction WIELAND CuPHC
+# Extraction WIELAND Cu-DLP
+# Extraction WIELAND K55
+# Extraction WIELAND Cu Fe0.1 P
 
-# Extraction R-METAL
+# Extraction MATERION CuBe1,9
+# Extraction MATERION Alloy 360
 
-# Extraction SUNDWIGER
+# Extraction R-METAL CuSn6P
+# Extraction R-METAL CuSn8P
+# Extraction R-METAL CuSn9P
+# Extraction R-METAL CuZn30
+# Extraction R-METAL Cu-ETP
+# Extraction R-METAL Inox 1,4310
 
-# Extraction ARS
+# Extraction SUNDWIGER CuSn0,15
+# Extraction SUNDWIGER CuSn6P
 
-# Extraction THERMOCOMPACT
+# Extraction ARS CuSn6
+# Extraction ARS CuZn37
+# Extraction ARS ALU 1050A
+# Extraction ARS ALU 5754
 
-# Extraction RICHARD STENZHORN
+# Extraction THERMOCOMPACT Ni TOT
+# Extraction THERMOCOMPACT AuCo TOT
+# Extraction THERMOCOMPACT Au total sur s/c Ni total
 
-# Extraction AD-PLATING
+# Extraction RICHARD STENZHORN CuFe2P
+# Extraction RICHARD STENZHORN CuZn30
+# Extraction RICHARD STENZHORN CuSn6P
 
-# Extraction KME
+# Extraction AD-PLATING Ni TOTAL 2 µm mini
+# Extraction AD-PLATING Ni total 3 à 9µ
 
-# Extraction PEM
+# Extraction KME STOL78
+# Extraction KME Cu-OFE
 
-# Extraction GRISET
+# Extraction PEM CuSn6P
+# Extraction PEM Cu-ETP
+# Extraction PEM CuZn36
+# Extraction PEM CuZn36 H12
+# Extraction PEM Ni
+# Extraction PEM NiP
+# Extraction PEM Au
+# Extraction PEM Sn V
+# Extraction PEM Ag
 
-# Extraction LEGENI
+# Extraction GRISET CuFe0,1P-FPG
+# Extraction GRISET  FGP
+# Extraction GRISET  Cu-ETP
+# Extraction GRISET  CuSn0,15
+# Extraction GRISET  Cu-DLP
+# Extraction GRISET  CuFe0,1P
+# Extraction GRISET  Cu-DHP
+# Extraction GRISET  CuFe2P
+# Extraction GRISET  CuSn6P
 
-# Extraction DPE
+# Extraction LEGENI Ni TOT
+# Extraction LEGENI Au TOT
+# Extraction LEGENI Au total sur s/c Ni total
+
+# Extraction DPE Sn
+# Extraction DPE Ag
+# Extraction DPE Ag20
+# Extraction DPE Au b
+# Extraction DPE Au b20
+# Extraction DPE AuCo
+# Extraction DPE Cu
+# Extraction DPE Cu20
+# Extraction DPE Ni
+# Extraction DPE NiP
 
 # Lancement du process
 if __name__ == '__main__':
     print("Début du process")
     wb = Workbook()
+    # Extraction pour Elisabeth
     extract_1AG2_data(get_soup(reqs.response_lbma))
     extract_1AU2_data(get_soup(reqs.response_lbma))
     extract_1AG1_data(get_soup(reqs.response_cookson))
     extract_1AU3_data(get_soup(reqs.response_cookson))
-    #extract_kme_data(get_soup(reqs.response_kme))
     extract_1AG3_data(get_soup(reqs.response_1AG3))
     extract_2M37_data(get_soup(reqs.response_2M37))
     extract_3AL1_data(get_soup(reqs.response_3AL1))
     extract_3CU1_data(get_soup(reqs.response_3CU1))
     extract_3CU3_data(get_soup(reqs.response_3CU3))
+
+    # Extraction pour les Achats
+
+    #extract_kme_data(get_soup(reqs.response_kme))
     #extract_wieland_data(get_soup(reqs.response_wieland))
     #download_pdf(reqs.response_reynolds, path_url.name_reynolds, path_url.download_path)
     #extract_reynolds_data(path_url.name_reynolds, wb)
