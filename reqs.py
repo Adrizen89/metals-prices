@@ -30,3 +30,5 @@ response_pem = requests.get(path_url.url_pem)
 response_griset = requests.get(path_url.url_griset)
 response_legeni = requests.get(path_url.url_legeni)
 response_dpe = requests.get(path_url.url_dpe)
+
+response_k55 = requests.get(path_url.url_k55)

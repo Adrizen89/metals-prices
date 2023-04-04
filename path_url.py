@@ -28,6 +28,7 @@ url_pem = ""
 url_griset = "https://www.kme.com/fr/services/cours-des-metaux"
 url_legeni = "https://www.cookson-clal.com/cours/"
 url_dpe = ""
+url_k55 = "https://www.wieland.com/en/resources/metal-information#high-performance-alloys"
 
 
 download_path = "C:/Users/adrie/Documents"

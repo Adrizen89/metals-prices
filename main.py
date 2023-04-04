@@ -26,7 +26,7 @@ def download_pdf(response, name, folder):
     else:
         print(f"Erreur lors du téléchargement de {name}")
 
-# Récupérer les responses
+# Récupérer les accès aux sites
 def get_soup(response):
     """Récupérer le soup à partir de la réponse HTTP"""
     if response.status_code == 200:
@@ -35,7 +35,7 @@ def get_soup(response):
     else:
         print("Erreur lors de la récupération du contenu HTML")
 
-# Extraction données lbma pour 1AG2
+# Extraction données lbma pour 1AG2 (EL)
 def extract_1AG2_data(soup):
     ws = wb.create_sheet('1AG2')
     ws.append(['Ag LBMA' ])
@@ -63,7 +63,7 @@ def extract_1AG2_data(soup):
             ws['B2'] = cell.text.replace('.', ',')
             ws['C2'] = '$'
 
-# Extraction données lbma pour 1AU2
+# Extraction données lbma pour 1AU2 (EL)
 def extract_1AU2_data(soup):
     ws = wb.create_sheet('1AU2')
     ws.append(['Au LBMA'])
@@ -86,9 +86,7 @@ def extract_1AU2_data(soup):
             ws['B2'] = cell.text.replace('.', ',')
             ws['C2'] = '$'
 
-
-
-# Extraction données Cookson pour 1AG1
+# Extraction données Cookson pour 1AG1 (EL)
 def extract_1AG1_data(soup):
     """Extraire les données de la table Cookson et les ajouter au classeur Excel"""
     table = soup.find("table", {"class": "main"})
@@ -109,7 +107,7 @@ def extract_1AG1_data(soup):
     ws['B2'] = data.replace('.', ',')
     ws['C2'] = '€'
 
-# Extraction données Cookson pour 1AU3
+# Extraction données Cookson pour 1AU3 (EL)
 def extract_1AU3_data(soup):
     """Extraire les données de la table Cookson et les ajouter au classeur Excel"""
     table = soup.find("table", {"class": "main"})
@@ -132,7 +130,7 @@ def extract_1AU3_data(soup):
     ws['C2'] = '€'
 
 
-# Extraction données pour 1AG3
+# Extraction données pour 1AG3 (EL)
 def extract_1AG3_data(soup):
     """Extraire les données de la table Cookson et les ajouter au classeur Excel"""
     table = soup.find("table")
@@ -154,7 +152,7 @@ def extract_1AG3_data(soup):
     ws['B2'] = data.replace('.', ',')
     ws['C2'] = '€'
 
-# Extraction données pour 2M37
+# Extraction données pour 2M37 (EL)
 def extract_2M37_data(soup):
     """Extraire les données de la table Cookson et les ajouter au classeur Excel"""
     table = soup.find("table")
@@ -176,7 +174,7 @@ def extract_2M37_data(soup):
     ws['B2'] = data.replace('.', ',')
     ws['C2'] = '€'
 
-# Extraction données pour 3AL1
+# Extraction données pour 3AL1 (EL)
 def extract_3AL1_data(soup):
     """Extraire les données de la table Cookson et les ajouter au classeur Excel"""
     table = soup.find("table")
@@ -198,7 +196,7 @@ def extract_3AL1_data(soup):
     ws['B2'] = data.replace(',', '').replace('.', ',')
     ws['C2'] = '$'
 
-# Extraction données pour 3CU1
+# Extraction données pour 3CU1 (EL)
 def extract_3CU1_data(soup):
     """Extraire les données de la table Cookson et les ajouter au classeur Excel"""
     table = soup.find("table")
@@ -220,7 +218,7 @@ def extract_3CU1_data(soup):
     ws['B2'] = data.replace(',', '').replace('.', ',')
     ws['C2'] = '$'
 
-# Extraction données pour 3CU3
+# Extraction données pour 3CU3 (EL)
 def extract_3CU3_data(soup):
     """Extraire les données de la table Cookson et les ajouter au classeur Excel"""
     table = soup.find("table")
@@ -242,7 +240,7 @@ def extract_3CU3_data(soup):
     ws['B2'] = data.replace('.', ',')
     ws['C2'] = '€'
 
-# Extraction données KME
+# Extraction données KME (AP)
 def extract_kme_data(soup):
     """Extraire les données de la table KME et les ajouter au classeur Excel"""
     table = soup.find('table', class_='table table-condensed table-hover table-striped')
@@ -255,21 +253,29 @@ def extract_kme_data(soup):
         if len(data) == 4:
             ws.append([data[3], data[1], data[2].replace('*', '').replace('.', '').replace(',', '.')])
 
-# Extraction données Wieland
+# Extraction données Wieland (AP)
 def extract_wieland_data(soup):
     """Extraire les données de la table Wieland et les ajouter au classeur Excel"""
-    table = soup.find('table', class_='metalinfo-table table-lme-settlement')
-    ws = wb.create_sheet('Wieland')
-    ws.append(['Index', 'Prix', 'Devise'])
+    table = soup.find('table', class_='metalinfo-table table-')
+    ws = wb.create_sheet('K55')
+    ws.append(['WIELAND'])
 
-    for row in table.find_all('tr'):
-        data = []
-        for cell in row.find_all("td")[:3]:
-            data.append(cell.text.strip())
-        if len(data) == 3:
-            ws.append([data[2], data[1].replace(',', '')])
+    rows = soup.find_all("tr")
+    second_row = rows[0]
 
-# Extraction données Reynolds
+    # Trouver la quatrième colonne de la table dans la deuxième ligne
+    columns = second_row.find_all("td")
+    first_column = columns[1]
+
+    # Extraire le texte de la quatrième colonne
+    data = first_column.text.strip()
+    print(data)
+
+    ws['A2'] = 'K55'
+    ws['B2'] = data.replace('.', ',')
+    ws['C2'] = '$'
+
+# Extraction données Reynolds (AP)
 def extract_reynolds_data(name_reynolds, wb):
     """Extraire les données du PDF Reynolds et les ajouter au classeur Excel"""
     wb.create_sheet('Reynolds')
@@ -305,7 +311,7 @@ def extract_reynolds_data(name_reynolds, wb):
                         data.append("1 TO")
                         wr.append([data[0], data[1].replace(',', '.'), data[2], data[3]])
 
-# Extraction données Materion
+# Extraction données Materion (AP)
 def extract_materion_data(file_name):
     """Extraire les données de la table Materion et les ajouter au classeur Excel"""
     wb.create_sheet('Materion')
@@ -342,99 +348,119 @@ def delete_pdfs():
     except Exception as e:
         print(f"Une erreur s'est produite : {e}")
 
-# Extraction AURUBIS CuSn0, 15
-# Extraction AURUBIS Cu-ETP
-# Extraction AURUBIS CuFe0, 1P
-# Extraction AURUBIS Cu-DLP
+# Extraction AURUBIS CuSn0, 15 (AC)
+# Extraction AURUBIS Cu-ETP (AC)
+# Extraction AURUBIS CuFe0, 1P (AC)
+# Extraction AURUBIS Cu-DLP (AC)
 
-# Extraction NOVAPROFIL CuZn30
-# Extraction NOVAPROFIL CuZn33
-# Extraction NOVAPROFIL CuZn36
-# Extraction NOVAPROFIL CuZn37
+# Extraction NOVAPROFIL CuZn30 (AC)
+# Extraction NOVAPROFIL CuZn33 (AC)
+# Extraction NOVAPROFIL CuZn36 (AC)
+# Extraction NOVAPROFIL CuZn37 (AC)
 
-# Extraction INOVAN Cu Invar Cu
-# Extraction INOVAN Cu-OF
+# Extraction INOVAN Cu Invar Cu (AC)
+# Extraction INOVAN Cu-OF (AC)
 
-# Extraction PROFILTECH CuBe1,9
-# Extraction PROFILTECH CuSn6P
-# Extraction PROFILTECH Cu-PHC
+# Extraction PROFILTECH CuBe1,9 (AC)
+# Extraction PROFILTECH CuSn6P (AC)
+# Extraction PROFILTECH Cu-PHC (AC)
 
 
-# Extraction WIELAND CuSn6
-# Extraction WIELAND Cu-ETP
-# Extraction WIELAND Cu-OF
-# Extraction WIELAND Cu-OFE
-# Extraction WIELAND CuPHC
-# Extraction WIELAND Cu-DLP
-# Extraction WIELAND K55
-# Extraction WIELAND Cu Fe0.1 P
+# Extraction WIELAND CuSn6 (AC)
+# Extraction WIELAND Cu-ETP (AC)
+# Extraction WIELAND Cu-OF (AC)
+# Extraction WIELAND Cu-OFE (AC)
+# Extraction WIELAND CuPHC (AC)
+# Extraction WIELAND Cu-DLP (AC)
+# Extraction WIELAND K55 (AC) => High performance alloys
+def extract_wieland_data(soup):
+    """Extraire les données de la table Wieland et les ajouter au classeur Excel"""
+    table = soup.find('table', class_='metalinfo-table table-')
+    ws = wb.create_sheet('K55')
+    ws.append(['WIELAND'])
 
-# Extraction MATERION CuBe1,9
-# Extraction MATERION Alloy 360
+    rows = soup.find_all("tr")
+    second_row = rows[0]
 
-# Extraction R-METAL CuSn6P
-# Extraction R-METAL CuSn8P
-# Extraction R-METAL CuSn9P
-# Extraction R-METAL CuZn30
-# Extraction R-METAL Cu-ETP
-# Extraction R-METAL Inox 1,4310
+    # Trouver la quatrième colonne de la table dans la deuxième ligne
+    columns = second_row.find_all("td")
+    first_column = columns[1]
 
-# Extraction SUNDWIGER CuSn0,15
-# Extraction SUNDWIGER CuSn6P
+    # Extraire le texte de la quatrième colonne
+    data = first_column.text.strip()
+    print(data)
 
-# Extraction ARS CuSn6
-# Extraction ARS CuZn37
-# Extraction ARS ALU 1050A
-# Extraction ARS ALU 5754
+    ws['A2'] = 'K55'
+    ws['B2'] = data.replace('.', ',')
+    ws['C2'] = '$'
+# Extraction WIELAND Cu Fe0.1 P (AC)
 
-# Extraction THERMOCOMPACT Ni TOT
-# Extraction THERMOCOMPACT AuCo TOT
-# Extraction THERMOCOMPACT Au total sur s/c Ni total
+# Extraction MATERION CuBe1,9 (AC)
+# Extraction MATERION Alloy 360 (AC) => OK
 
-# Extraction RICHARD STENZHORN CuFe2P
-# Extraction RICHARD STENZHORN CuZn30
-# Extraction RICHARD STENZHORN CuSn6P
+# Extraction R-METAL CuSn6P (AC)
+# Extraction R-METAL CuSn8P (AC)
+# Extraction R-METAL CuSn9P (AC)
+# Extraction R-METAL CuZn30 (AC)
+# Extraction R-METAL Cu-ETP (AC)
+# Extraction R-METAL Inox 1,4310 (AC)
 
-# Extraction AD-PLATING Ni TOTAL 2 µm mini
-# Extraction AD-PLATING Ni total 3 à 9µ
+# Extraction SUNDWIGER CuSn0,15 (AC)
+# Extraction SUNDWIGER CuSn6P (AC)
 
-# Extraction KME STOL78
-# Extraction KME Cu-OFE
+# Extraction ARS CuSn6 (AC)
+# Extraction ARS CuZn37 (AC)
+# Extraction ARS ALU 1050A (AC)
+# Extraction ARS ALU 5754 (AC)
 
-# Extraction PEM CuSn6P
-# Extraction PEM Cu-ETP
-# Extraction PEM CuZn36
-# Extraction PEM CuZn36 H12
-# Extraction PEM Ni
-# Extraction PEM NiP
-# Extraction PEM Au
-# Extraction PEM Sn V
-# Extraction PEM Ag
+# Extraction THERMOCOMPACT Ni TOT (AC)
+# Extraction THERMOCOMPACT AuCo TOT (AC)
+# Extraction THERMOCOMPACT Au total sur s/c Ni total (AC)
 
-# Extraction GRISET CuFe0,1P-FPG
-# Extraction GRISET  FGP
-# Extraction GRISET  Cu-ETP
-# Extraction GRISET  CuSn0,15
-# Extraction GRISET  Cu-DLP
-# Extraction GRISET  CuFe0,1P
-# Extraction GRISET  Cu-DHP
-# Extraction GRISET  CuFe2P
-# Extraction GRISET  CuSn6P
+# Extraction RICHARD STENZHORN CuFe2P (AC)
+# Extraction RICHARD STENZHORN CuZn30 (AC)
+# Extraction RICHARD STENZHORN CuSn6P (AC)
 
-# Extraction LEGENI Ni TOT
-# Extraction LEGENI Au TOT
-# Extraction LEGENI Au total sur s/c Ni total
+# Extraction AD-PLATING Ni TOTAL 2 µm mini (AC)
+# Extraction AD-PLATING Ni total 3 à 9µ (AC)
 
-# Extraction DPE Sn
-# Extraction DPE Ag
-# Extraction DPE Ag20
-# Extraction DPE Au b
-# Extraction DPE Au b20
-# Extraction DPE AuCo
-# Extraction DPE Cu
-# Extraction DPE Cu20
-# Extraction DPE Ni
-# Extraction DPE NiP
+# Extraction KME STOL78 (AC)
+# Extraction KME Cu-OFE (AC)
+
+# Extraction PEM CuSn6P (AC)
+# Extraction PEM Cu-ETP (AC)
+# Extraction PEM CuZn36 (AC)
+# Extraction PEM CuZn36 H12 (AC)
+# Extraction PEM Ni (AC)
+# Extraction PEM NiP (AC)
+# Extraction PEM Au (AC)
+# Extraction PEM Sn V (AC)
+# Extraction PEM Ag (AC)
+
+# Extraction GRISET CuFe0,1P-FPG (AC)
+# Extraction GRISET  FGP (AC)
+# Extraction GRISET  Cu-ETP (AC)
+# Extraction GRISET  CuSn0,15 (AC)
+# Extraction GRISET  Cu-DLP (AC)
+# Extraction GRISET  CuFe0,1P (AC)
+# Extraction GRISET  Cu-DHP (AC)
+# Extraction GRISET  CuFe2P (AC)
+# Extraction GRISET  CuSn6P (AC)
+
+# Extraction LEGENI Ni TOT (AC)
+# Extraction LEGENI Au TOT (AC)
+# Extraction LEGENI Au total sur s/c Ni total (AC)
+
+# Extraction DPE Sn (AC)
+# Extraction DPE Ag (AC)
+# Extraction DPE Ag20 (AC)
+# Extraction DPE Au b (AC)
+# Extraction DPE Au b20 (AC)
+# Extraction DPE AuCo (AC)
+# Extraction DPE Cu (AC)
+# Extraction DPE Cu20 (AC)
+# Extraction DPE Ni (AC)
+# Extraction DPE NiP (AC)
 
 # Lancement du process
 if __name__ == '__main__':
