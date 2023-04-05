@@ -35,6 +35,7 @@ def get_soup(response):
     else:
         print("Erreur lors de la récupération du contenu HTML")
 
+################################################################
 # Extraction données lbma pour 1AG2 (EL)
 def extract_1AG2_data(soup):
     ws = wb.create_sheet('1AG2')
@@ -239,6 +240,7 @@ def extract_3CU3_data(soup):
     ws['A2'] = 'CU'
     ws['B2'] = data.replace('.', ',')
     ws['C2'] = '€'
+################################################################
 
 # Extraction données KME (AP)
 def extract_kme_data(soup):
@@ -253,27 +255,30 @@ def extract_kme_data(soup):
         if len(data) == 4:
             ws.append([data[3], data[1], data[2].replace('*', '').replace('.', '').replace(',', '.')])
 
-# Extraction données Wieland (AP)
-def extract_wieland_data(soup):
+################################################################
+# Extraction données Wieland Cu (AC)
+def extract_wielandCu_data(soup):
     """Extraire les données de la table Wieland et les ajouter au classeur Excel"""
-    table = soup.find('table', class_='metalinfo-table table-')
-    ws = wb.create_sheet('K55')
-    ws.append(['WIELAND'])
+    table = soup.find('table', class_='metalinfo-table table-lme-settlement')
+    ws = wb.create_sheet('Cu')
+    ws.append(['WIELAND Cu'])
 
     rows = soup.find_all("tr")
-    second_row = rows[0]
+    first_row = rows[0]
 
     # Trouver la quatrième colonne de la table dans la deuxième ligne
-    columns = second_row.find_all("td")
-    first_column = columns[1]
+    columns = first_row.find_all("td")
+    first_column = columns[0]
 
     # Extraire le texte de la quatrième colonne
     data = first_column.text.strip()
     print(data)
 
-    ws['A2'] = 'K55'
-    ws['B2'] = data.replace('.', ',')
+    ws['A2'] = 'Cu'
+    ws['B2'] = data.replace('.', '')
     ws['C2'] = '$'
+
+
 
 # Extraction données Reynolds (AP)
 def extract_reynolds_data(name_reynolds, wb):
@@ -311,30 +316,38 @@ def extract_reynolds_data(name_reynolds, wb):
                         data.append("1 TO")
                         wr.append([data[0], data[1].replace(',', '.'), data[2], data[3]])
 
-# Extraction données Materion (AP)
+# Extraction données Materion Alloy 360(AC)
 def extract_materion_data(file_name):
     """Extraire les données de la table Materion et les ajouter au classeur Excel"""
     wb.create_sheet('Materion')
     wm = wb['Materion']
+    wm.append(['Materion'])
 
     with open(path_url.folder_materion, 'rb') as pdf_materion:
         reader_materion = PdfReader(pdf_materion)
         page_materion = reader_materion.pages[0]
         text_materion = page_materion.extract_text()
-        numbers = re.findall(r'\d+\.\d{2}', text_materion)
 
-        # Ajouter des en-têtes de colonne
-        wm['A1'] = 'USD/Lb'
-        wm['B1'] = 'EUR/Kg'
-        wm['C1'] = 'GBP/Kg'
-        wm['D1'] = 'RMB/Kg'
-        wm['E1'] = 'USD/Kg'
+        lines = text_materion.split('\n')
 
-        # Ajouter les nombres extraits dans le tableau Excel
-        for i, number in enumerate(numbers):
-            row = (i // 5) + 2  # calculer le numéro de ligne en fonction de l'indice de la boucle
-            col = (i % 5) + 1  # calculer le numéro de colonne en fonction de l'indice de la boucle
-            wm.cell(row=row, column=col, value=number)
+        alloy_line = None
+        for line in lines:
+            if line.startswith('Alloy 360'):
+                alloy_line = line
+                break
+
+        if alloy_line is not None:
+            # Récupérer la valeur de la 4ème colonne
+            columns = alloy_line.split()
+            if len(columns) >= 4:
+                price_eur = columns[4]
+            else:
+                price_eur = None
+
+            # Ajouter les nombres extraits dans le tableau Excel
+            wm['A2'] = 'Alloy 360'
+            wm['B2'] = price_eur
+            wm['C2'] = '€'
 
 # Suppression des PDFs
 def delete_pdfs():
@@ -348,9 +361,9 @@ def delete_pdfs():
     except Exception as e:
         print(f"Une erreur s'est produite : {e}")
 
-# Extraction AURUBIS CuSn0, 15 (AC)
+# Extraction AURUBIS CuSn0,15 (AC)
 # Extraction AURUBIS Cu-ETP (AC)
-# Extraction AURUBIS CuFe0, 1P (AC)
+# Extraction AURUBIS CuFe0,1P (AC)
 # Extraction AURUBIS Cu-DLP (AC)
 
 # Extraction NOVAPROFIL CuZn30 (AC)
@@ -359,7 +372,6 @@ def delete_pdfs():
 # Extraction NOVAPROFIL CuZn37 (AC)
 
 # Extraction INOVAN Cu Invar Cu (AC)
-# Extraction INOVAN Cu-OF (AC)
 
 # Extraction PROFILTECH CuBe1,9 (AC)
 # Extraction PROFILTECH CuSn6P (AC)
@@ -467,24 +479,24 @@ if __name__ == '__main__':
     print("Début du process")
     wb = Workbook()
     # Extraction pour Elisabeth
-    extract_1AG2_data(get_soup(reqs.response_lbma))
-    extract_1AU2_data(get_soup(reqs.response_lbma))
-    extract_1AG1_data(get_soup(reqs.response_cookson))
-    extract_1AU3_data(get_soup(reqs.response_cookson))
-    extract_1AG3_data(get_soup(reqs.response_1AG3))
-    extract_2M37_data(get_soup(reqs.response_2M37))
-    extract_3AL1_data(get_soup(reqs.response_3AL1))
-    extract_3CU1_data(get_soup(reqs.response_3CU1))
-    extract_3CU3_data(get_soup(reqs.response_3CU3))
+    # extract_1AG2_data(get_soup(reqs.response_lbma))
+    # extract_1AU2_data(get_soup(reqs.response_lbma))
+    # extract_1AG1_data(get_soup(reqs.response_cookson))
+    # extract_1AU3_data(get_soup(reqs.response_cookson))
+    # extract_1AG3_data(get_soup(reqs.response_1AG3))
+    # extract_2M37_data(get_soup(reqs.response_2M37))
+    # extract_3AL1_data(get_soup(reqs.response_3AL1))
+    # extract_3CU1_data(get_soup(reqs.response_3CU1))
+    # extract_3CU3_data(get_soup(reqs.response_3CU3))
 
     # Extraction pour les Achats
+    # extract_wielandCu_data(get_soup(reqs.response_wieland))
 
     #extract_kme_data(get_soup(reqs.response_kme))
-    #extract_wieland_data(get_soup(reqs.response_wieland))
-    #download_pdf(reqs.response_reynolds, path_url.name_reynolds, path_url.download_path)
+    download_pdf(reqs.response_reynolds, path_url.name_reynolds, path_url.download_path)
     #extract_reynolds_data(path_url.name_reynolds, wb)
-    #download_pdf(reqs.response_materion, path_url.name_materion, path_url.download_path)
-    #extract_materion_data(path_url.name_materion)
+    download_pdf(reqs.response_materion, path_url.name_materion, path_url.download_path)
+    extract_materion_data(path_url.name_materion)
     #delete_pdfs()
 
     file_path = os.path.join(path_url.excel_path, 'metals_prices.xlsx')
