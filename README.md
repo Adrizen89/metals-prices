@@ -4,6 +4,11 @@ Cette application a pour but de récupérer différents cours de métaux sur dif
 
 DAD - Adrien BERARD
 
-| Headline 1 in the tablehead | Headline 2 in the tablehead | Headline 3 in the tablehead |
-|:--------------|:-------------:|--------------:|
-| text-align left | text-align center | text-align right |
+| Métal | Devise | Code SAP | Description | Lien |
+|:--------------|:-------------:|--------------:|--------------:|--------------:|
+| AG | € | 1AG1 | Ag c3E | https://www.cookson-clal.com/cours/cours.jsp?table=fins&datearch= |
+| AG | € | 1AG1 | Ag c3E | https://www.cookson-clal.com/cours/cours.jsp?table=fins&datearch= |
+| AG | € | 1AG1 | Ag c3E | https://www.cookson-clal.com/cours/cours.jsp?table=fins&datearch= |
+| AG | € | 1AG1 | Ag c3E | https://www.cookson-clal.com/cours/cours.jsp?table=fins&datearch= |
+| AG | € | 1AG1 | Ag c3E | https://www.cookson-clal.com/cours/cours.jsp?table=fins&datearch= |
+| AG | € | 1AG1 | Ag c3E | https://www.cookson-clal.com/cours/cours.jsp?table=fins&datearch= |
