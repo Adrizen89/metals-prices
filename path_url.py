@@ -1,3 +1,6 @@
+from dotenv import load_dotenv
+import os
+load_dotenv()
 url_cookson = "https://www.cookson-clal.com/cours/"
 url_kme = 'https://www.kme.com/en/services/metal-prices'
 url_wieland = 'https://www.wieland.com/en/resources/metal-information#metal-information'
@@ -30,9 +33,9 @@ url_dpe = ""
 url_k55 = "https://www.wieland.com/en/resources/metal-information#high-performance-alloys"
 
 
-download_path = "C:/Users/adrie/OneDrive/Documents"
+download_path = os.getenv("DOWNLOAD_PATH")
 name_reynolds = "Cours_metaux_template.pdf"
 folder_reynolds = f"{download_path}/{name_reynolds}"
 name_materion = "metalvaluepostingfile.pdf"
 folder_materion = f"{download_path}/{name_materion}"
-excel_path = "C:/Users/adrie/OneDrive/Bureau"
+excel_path = os.getenv("EXCEL_PATH")

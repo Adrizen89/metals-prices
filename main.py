@@ -265,9 +265,7 @@ def extract_wielandCu_data(soup):
 
     tbody = soup.find('tbody')
     rows = tbody.find_all("tr")
-    print(rows)
     value = rows[0].find_all('td')[1].get_text()
-    print(value)
 
     ws['A2'] = 'Cu'
     ws['B2'] = value.replace(',', '').replace('.', ',')
@@ -305,6 +303,9 @@ def extract_materion_data(file_name):
             wm['A2'] = 'Alloy 360'
             wm['B2'] = price_eur
             wm['C2'] = '€'
+
+
+
 
 
 # Extraction données Reynolds (AP)
@@ -486,17 +487,17 @@ if __name__ == '__main__':
     # extract_3CU3_data(get_soup(reqs.response_3CU3))
 
     # Extraction pour les Achats
-    # download_pdf(reqs.response_materion, path_url.name_materion, path_url.download_path)
-    # extract_materion_data(path_url.name_materion)
+    download_pdf(reqs.response_materion, path_url.name_materion, path_url.download_path)
+    extract_materion_data(path_url.name_materion)
     extract_wielandCu_data(get_soup(reqs.response_wieland))
-
+    download_pdf(reqs.response_reynolds, path_url.name_reynolds, path_url.download_path)
+    #extract_reynolds_data(path_url.name_reynolds, wb)
 
     delete_pdfs()
 
 
     #extract_kme_data(get_soup(reqs.response_kme))
-    # download_pdf(reqs.response_reynolds, path_url.name_reynolds, path_url.download_path)
-    #extract_reynolds_data(path_url.name_reynolds, wb)
+    
 
 
 
