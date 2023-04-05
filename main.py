@@ -263,21 +263,48 @@ def extract_wielandCu_data(soup):
     ws = wb.create_sheet('Cu')
     ws.append(['WIELAND Cu'])
 
-    rows = soup.find_all("tr")
-    first_row = rows[0]
-
-    # Trouver la quatrième colonne de la table dans la deuxième ligne
-    columns = first_row.find_all("td")
-    first_column = columns[0]
-
-    # Extraire le texte de la quatrième colonne
-    data = first_column.text.strip()
-    print(data)
+    tbody = soup.find('tbody')
+    rows = tbody.find_all("tr")
+    print(rows)
+    value = rows[0].find_all('td')[1].get_text()
+    print(value)
 
     ws['A2'] = 'Cu'
-    ws['B2'] = data.replace('.', '')
+    ws['B2'] = value.replace(',', '').replace('.', ',')
     ws['C2'] = '$'
 
+# Extraction données Materion Alloy 360(AC)
+def extract_materion_data(file_name):
+    """Extraire les données de la table Materion et les ajouter au classeur Excel"""
+    wb.create_sheet('Materion')
+    wm = wb['Materion']
+    wm.append(['Materion'])
+
+    with open(path_url.folder_materion, 'rb') as pdf_materion:
+        reader_materion = PdfReader(pdf_materion)
+        page_materion = reader_materion.pages[0]
+        text_materion = page_materion.extract_text()
+
+        lines = text_materion.split('\n')
+
+        alloy_line = None
+        for line in lines:
+            if line.startswith('Alloy 360'):
+                alloy_line = line
+                break
+
+        if alloy_line is not None:
+            # Récupérer la valeur de la 4ème colonne
+            columns = alloy_line.split()
+            if len(columns) >= 4:
+                price_eur = columns[4]
+            else:
+                price_eur = None
+
+            # Ajouter les nombres extraits dans le tableau Excel
+            wm['A2'] = 'Alloy 360'
+            wm['B2'] = price_eur
+            wm['C2'] = '€'
 
 
 # Extraction données Reynolds (AP)
@@ -316,38 +343,7 @@ def extract_reynolds_data(name_reynolds, wb):
                         data.append("1 TO")
                         wr.append([data[0], data[1].replace(',', '.'), data[2], data[3]])
 
-# Extraction données Materion Alloy 360(AC)
-def extract_materion_data(file_name):
-    """Extraire les données de la table Materion et les ajouter au classeur Excel"""
-    wb.create_sheet('Materion')
-    wm = wb['Materion']
-    wm.append(['Materion'])
 
-    with open(path_url.folder_materion, 'rb') as pdf_materion:
-        reader_materion = PdfReader(pdf_materion)
-        page_materion = reader_materion.pages[0]
-        text_materion = page_materion.extract_text()
-
-        lines = text_materion.split('\n')
-
-        alloy_line = None
-        for line in lines:
-            if line.startswith('Alloy 360'):
-                alloy_line = line
-                break
-
-        if alloy_line is not None:
-            # Récupérer la valeur de la 4ème colonne
-            columns = alloy_line.split()
-            if len(columns) >= 4:
-                price_eur = columns[4]
-            else:
-                price_eur = None
-
-            # Ajouter les nombres extraits dans le tableau Excel
-            wm['A2'] = 'Alloy 360'
-            wm['B2'] = price_eur
-            wm['C2'] = '€'
 
 # Suppression des PDFs
 def delete_pdfs():
@@ -490,14 +486,19 @@ if __name__ == '__main__':
     # extract_3CU3_data(get_soup(reqs.response_3CU3))
 
     # Extraction pour les Achats
-    # extract_wielandCu_data(get_soup(reqs.response_wieland))
+    # download_pdf(reqs.response_materion, path_url.name_materion, path_url.download_path)
+    # extract_materion_data(path_url.name_materion)
+    extract_wielandCu_data(get_soup(reqs.response_wieland))
+
+
+    delete_pdfs()
+
 
     #extract_kme_data(get_soup(reqs.response_kme))
-    download_pdf(reqs.response_reynolds, path_url.name_reynolds, path_url.download_path)
+    # download_pdf(reqs.response_reynolds, path_url.name_reynolds, path_url.download_path)
     #extract_reynolds_data(path_url.name_reynolds, wb)
-    download_pdf(reqs.response_materion, path_url.name_materion, path_url.download_path)
-    extract_materion_data(path_url.name_materion)
-    #delete_pdfs()
+
+
 
     file_path = os.path.join(path_url.excel_path, 'metals_prices.xlsx')
     wb.save(file_path)
