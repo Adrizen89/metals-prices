@@ -10,8 +10,8 @@ $ code .
 
 ```
 Créer un fichier ".env" avec les variables suivantes : 
-    DOWNLOAD_PATH = path/for/download/pdf 
-    EXCEL_PATH = path/for/download/excel
+    ######DOWNLOAD_PATH = path/for/download/pdf 
+    ######EXCEL_PATH = path/for/download/excel
 
 ## Tableau pour Tarifs Clients
 
