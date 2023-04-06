@@ -3,7 +3,7 @@
 Cette application a pour but de récupérer différents cours de métaux sur différents sites, les regrouper sur un fichier Excel et le déposer dans un dossier spécifique.
 
 ## Installation
-
+```
 $ git clone https://example.com
 $ cd ../path/to/the/file
 $ Créer un fichier ".env" avec les variables suivantes :
