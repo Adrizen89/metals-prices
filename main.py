@@ -272,7 +272,7 @@ def extract_wielandCu_data(soup):
     ws['C2'] = '$'
 
 # Extraction données Materion Alloy 360(AC)
-def extract_materion_data(file_name):
+def extract_materion_alloy360_data(file_name):
     """Extraire les données de la table Materion et les ajouter au classeur Excel"""
     wb.create_sheet('Materion')
     wm = wb['Materion']
@@ -301,10 +301,39 @@ def extract_materion_data(file_name):
 
             # Ajouter les nombres extraits dans le tableau Excel
             wm['A2'] = 'Alloy 360'
-            wm['B2'] = price_eur
+            wm['B2'] = price_eur.replace('.', ',')
             wm['C2'] = '€'
 
+#Ectraction données Materion Alloy 25 (AC)
+def extract_materion_alloy25_data(file_name):
+    """Extraire les données de la table Materion et les ajouter au classeur Excel"""
+    wm = wb['Materion']
 
+    with open(path_url.folder_materion, 'rb') as pdf_materion:
+        reader_materion = PdfReader(pdf_materion)
+        page_materion = reader_materion.pages[0]
+        text_materion = page_materion.extract_text()
+
+        lines = text_materion.split('\n')
+
+        alloy_line = None
+        for line in lines:
+            if line.startswith('Alloy 25'):
+                alloy_line = line
+                break
+
+        if alloy_line is not None:
+            # Récupérer la valeur de la 4ème colonne
+            columns = alloy_line.split()
+            if len(columns) >= 4:
+                price_eur = columns[4]
+            else:
+                price_eur = None
+
+            # Ajouter les nombres extraits dans le tableau Excel
+            wm['A3'] = 'Alloy 25'
+            wm['B3'] = price_eur.replace('.', ',')
+            wm['C3'] = '€'
 
 
 
@@ -476,28 +505,29 @@ if __name__ == '__main__':
     print("Début du process")
     wb = Workbook()
     # Extraction pour Elisabeth
-    # extract_1AG2_data(get_soup(reqs.response_lbma))
-    # extract_1AU2_data(get_soup(reqs.response_lbma))
-    # extract_1AG1_data(get_soup(reqs.response_cookson))
-    # extract_1AU3_data(get_soup(reqs.response_cookson))
-    # extract_1AG3_data(get_soup(reqs.response_1AG3))
-    # extract_2M37_data(get_soup(reqs.response_2M37))
-    # extract_3AL1_data(get_soup(reqs.response_3AL1))
-    # extract_3CU1_data(get_soup(reqs.response_3CU1))
-    # extract_3CU3_data(get_soup(reqs.response_3CU3))
+    extract_1AG2_data(get_soup(reqs.response_lbma))
+    extract_1AU2_data(get_soup(reqs.response_lbma))
+    extract_1AG1_data(get_soup(reqs.response_cookson))
+    extract_1AU3_data(get_soup(reqs.response_cookson))
+    extract_1AG3_data(get_soup(reqs.response_1AG3))
+    extract_2M37_data(get_soup(reqs.response_2M37))
+    extract_3AL1_data(get_soup(reqs.response_3AL1))
+    extract_3CU1_data(get_soup(reqs.response_3CU1))
+    extract_3CU3_data(get_soup(reqs.response_3CU3))
 
     # Extraction pour les Achats
     download_pdf(reqs.response_materion, path_url.name_materion, path_url.download_path)
-    extract_materion_data(path_url.name_materion)
+    extract_materion_alloy360_data(path_url.name_materion)
+    extract_materion_alloy25_data(path_url.name_materion)
     extract_wielandCu_data(get_soup(reqs.response_wieland))
-    download_pdf(reqs.response_reynolds, path_url.name_reynolds, path_url.download_path)
+    # download_pdf(reqs.response_reynolds, path_url.name_reynolds, path_url.download_path)
     #extract_reynolds_data(path_url.name_reynolds, wb)
 
     delete_pdfs()
 
 
     #extract_kme_data(get_soup(reqs.response_kme))
-    
+
 
 
 
