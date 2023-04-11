@@ -15,6 +15,18 @@ from selenium.webdriver.support.ui import WebDriverWait
 import path_url
 import reqs
 
+import tkinter as tk
+from tkinter import filedialog
+
+
+
+def choice_path():
+    """Choisir le chemin pour déposer le fichier Excel"""
+    chemin = filedialog.askdirectory()
+    print(chemin)
+
+
+
 # Téléchargement des PDFs
 def download_pdf(response, name, folder):
     """Télécharger un fichier PDF et l'enregistrer localement"""
@@ -499,12 +511,9 @@ def extract_wieland_data(soup):
 # Extraction DPE Cu20 (AC)
 # Extraction DPE Ni (AC)
 # Extraction DPE NiP (AC)
-
-# Lancement du process
-if __name__ == '__main__':
-    print("Début du process")
-    wb = Workbook()
-    # Extraction pour Elisabeth
+def lancer_script():
+    """Script du scrapping"""
+     # Extraction pour Elisabeth
     extract_1AG2_data(get_soup(reqs.response_lbma))
     extract_1AU2_data(get_soup(reqs.response_lbma))
     extract_1AG1_data(get_soup(reqs.response_cookson))
@@ -527,12 +536,109 @@ if __name__ == '__main__':
 
 
     #extract_kme_data(get_soup(reqs.response_kme))
-
-
-
-
-    file_path = os.path.join(path_url.excel_path, 'metals_prices.xlsx')
+    file_path = os.path.join(chemin_excel, 'metals_prices.xlsx')
     wb.save(file_path)
     print('Fichier excel créé avec succès !')
+
+
+def choisir_chemin():
+    global chemin_excel
+    chemin_excel = filedialog.askdirectory(initialdir=os.getenv("EXCEL_PATH"))
+
+# def back_main():
+#     print('clique')
+#     settings_frame.pack_forget()
+#     main_frame.pack()
+
+# def show_files():
+#     with open("path_url.py", "r") as file:
+#         content = file.read()
+#         text.delete("1.0", tk.END)
+#         text.insert(tk.END, content)
+
+class FileFrame(tk.Frame):
+    def __init__(self, parent, file_path):
+        tk.Frame.__init__(self, parent, width=300, height=200)
+        self.pack_propagate(False)  # empêche la Frame de se redimensionner automatiquement
+        self.canvas = tk.Canvas(self, width=300, height=200)
+        self.scrollbar = tk.Scrollbar(self, orient="vertical", command=self.canvas.yview)
+        self.scrollable_frame = tk.Frame(self.canvas)
+
+        self.scrollable_frame.bind(
+            "<Configure>",
+            lambda e: self.canvas.configure(
+                scrollregion=self.canvas.bbox("all")
+            )
+        )
+
+        self.canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
+
+        self.canvas.configure(yscrollcommand=self.scrollbar.set)
+
+        self.canvas.pack(side="left", fill="both", expand=True)
+        self.scrollbar.pack(side="right", fill="y")
+
+        with open(file_path, "r") as f:
+            data = f.readlines()
+        for line in data:
+            if line.startswith("url_"):
+                data_label = tk.Label(self.scrollable_frame, text=line)
+                data_label.pack(side= tk.TOP, fill="x")
+
+# Lancement du process
+if __name__ == '__main__':
+
+    print("Début du process")
+    wb = Workbook()
+
+    # Création de la fenêtre principale
+    window = tk.Tk()
+    window.geometry("700x400")
+    window.title("Cours des métaux")
+    window.resizable(False, False)
+
+
+    # Création frame pour chemins d'accès
+    left_frame = tk.Frame(window)
+    acces_frame = tk.Frame(window)
+    excel_frame = tk.Frame(acces_frame)
+    pdf_frame = tk.Frame(acces_frame)
+    sites_frame = tk.Frame(acces_frame)
+
+    # Création des éléments de la fenêtre
+    title_label = tk.Label(window, text="Diehl Augé Découpage", font=("Inter", 32))
+    launch_button = tk.Button(left_frame, text="Lancer", command=lancer_script)
+
+    excel_label = tk.Label(excel_frame, text="Fichier Excel :")
+    excel_entry = tk.Entry(excel_frame, width=30)
+    excel_button = tk.Button(excel_frame, text="...", command=choisir_chemin)
+
+    pdf_label = tk.Label(pdf_frame, text="Fichier PDF :")
+    pdf_entry = tk.Entry(pdf_frame, width=30)
+    pdf_button = tk.Button(pdf_frame, text="...", command=choisir_chemin)
+
+    file_frame = FileFrame(acces_frame, "path_url.py")
+
+
+    # Placement des éléments dans la fenêtre
+    title_label.pack(side=tk.TOP, padx=10, pady=10)
+    launch_button.pack(side=tk.TOP, padx=10,pady=10)
+    acces_frame.pack(side=tk.RIGHT, padx=10, pady=10)
+    excel_frame.pack(side=tk.TOP, padx=10, pady=10)
+    pdf_frame.pack(side=tk.TOP, padx=10, pady=10)
+    left_frame.pack(side=tk.LEFT, padx=10, pady=10)
+    file_frame.pack(side=tk.BOTTOM, fill="both", expand=True)
+
+    excel_label.pack(side=tk.LEFT, padx=10, pady=10)
+    excel_entry.pack(side=tk.LEFT, padx=10, pady=5)
+    excel_button.pack(side=tk.RIGHT, padx=10, pady=5)
+
+    pdf_label.pack(side=tk.LEFT, padx=10, pady=10)
+    pdf_entry.pack(side=tk.LEFT, padx=10, pady=5)
+    pdf_button.pack(side=tk.RIGHT, padx=10, pady=5)
+
+    # Lancement de la boucle principale de la fenêtre
+    window.mainloop()
+
     print('Fin du process')
     time.sleep(3)
