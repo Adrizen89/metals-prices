@@ -17,6 +17,9 @@ import reqs
 
 import tkinter as tk
 from tkinter import filedialog
+import configparser
+import sys
+from io import StringIO
 
 
 
@@ -316,12 +319,13 @@ def extract_materion_alloy360_data(file_name):
             wm['B2'] = price_eur.replace('.', ',')
             wm['C2'] = '€'
 
-#Ectraction données Materion Alloy 25 (AC)
-def extract_materion_alloy25_data(file_name):
+#Extraction données pour 2CUB (AC)
+def extract_2CUB_data(path_materion, name_materion):
     """Extraire les données de la table Materion et les ajouter au classeur Excel"""
-    wm = wb['Materion']
-
-    with open(path_url.folder_materion, 'rb') as pdf_materion:
+    wb.create_sheet("2CUB")
+    wm = wb['2CUB']
+    path = f"{path_materion}/{name_materion}"
+    with open(path, 'rb') as pdf_materion:
         reader_materion = PdfReader(pdf_materion)
         page_materion = reader_materion.pages[0]
         text_materion = page_materion.extract_text()
@@ -346,7 +350,6 @@ def extract_materion_alloy25_data(file_name):
             wm['A3'] = 'Alloy 25'
             wm['B3'] = price_eur.replace('.', ',')
             wm['C3'] = '€'
-
 
 
 # Extraction données Reynolds (AP)
@@ -386,42 +389,20 @@ def extract_reynolds_data(name_reynolds, wb):
                         wr.append([data[0], data[1].replace(',', '.'), data[2], data[3]])
 
 
-
 # Suppression des PDFs
-def delete_pdfs():
+def delete_pdfs(path_pdf, name_materion, name_reynolds):
     """Supprimer deux fichiers PDF"""
+    path_materion = f"{path_pdf}/{name_materion}"
+    path_reynolds = f"{path_pdf}/{name_reynolds}"
     try:
-        os.remove(path_url.folder_materion)
-        os.remove(path_url.folder_reynolds)
+        os.remove(path_materion)
+        os.remove(path_reynolds)
         print("Suppression des fichiers PDF terminée avec succès")
     except FileNotFoundError:
         print("Erreur : au moins un des fichiers PDF n'existe pas")
     except Exception as e:
         print(f"Une erreur s'est produite : {e}")
 
-# Extraction AURUBIS CuSn0,15 (AC)
-# Extraction AURUBIS Cu-ETP (AC)
-# Extraction AURUBIS CuFe0,1P (AC)
-# Extraction AURUBIS Cu-DLP (AC)
-
-# Extraction NOVAPROFIL CuZn30 (AC)
-# Extraction NOVAPROFIL CuZn33 (AC)
-# Extraction NOVAPROFIL CuZn36 (AC)
-# Extraction NOVAPROFIL CuZn37 (AC)
-
-# Extraction INOVAN Cu Invar Cu (AC)
-
-# Extraction PROFILTECH CuBe1,9 (AC)
-# Extraction PROFILTECH CuSn6P (AC)
-# Extraction PROFILTECH Cu-PHC (AC)
-
-
-# Extraction WIELAND CuSn6 (AC)
-# Extraction WIELAND Cu-ETP (AC)
-# Extraction WIELAND Cu-OF (AC)
-# Extraction WIELAND Cu-OFE (AC)
-# Extraction WIELAND CuPHC (AC)
-# Extraction WIELAND Cu-DLP (AC)
 # Extraction WIELAND K55 (AC) => High performance alloys
 def extract_wieland_data(soup):
     """Extraire les données de la table Wieland et les ajouter au classeur Excel"""
@@ -443,119 +424,8 @@ def extract_wieland_data(soup):
     ws['A2'] = 'K55'
     ws['B2'] = data.replace('.', ',')
     ws['C2'] = '$'
-# Extraction WIELAND Cu Fe0.1 P (AC)
 
-# Extraction MATERION CuBe1,9 (AC)
-# Extraction MATERION Alloy 360 (AC) => OK
-
-# Extraction R-METAL CuSn6P (AC)
-# Extraction R-METAL CuSn8P (AC)
-# Extraction R-METAL CuSn9P (AC)
-# Extraction R-METAL CuZn30 (AC)
-# Extraction R-METAL Cu-ETP (AC)
-# Extraction R-METAL Inox 1,4310 (AC)
-
-# Extraction SUNDWIGER CuSn0,15 (AC)
-# Extraction SUNDWIGER CuSn6P (AC)
-
-# Extraction ARS CuSn6 (AC)
-# Extraction ARS CuZn37 (AC)
-# Extraction ARS ALU 1050A (AC)
-# Extraction ARS ALU 5754 (AC)
-
-# Extraction THERMOCOMPACT Ni TOT (AC)
-# Extraction THERMOCOMPACT AuCo TOT (AC)
-# Extraction THERMOCOMPACT Au total sur s/c Ni total (AC)
-
-# Extraction RICHARD STENZHORN CuFe2P (AC)
-# Extraction RICHARD STENZHORN CuZn30 (AC)
-# Extraction RICHARD STENZHORN CuSn6P (AC)
-
-# Extraction AD-PLATING Ni TOTAL 2 µm mini (AC)
-# Extraction AD-PLATING Ni total 3 à 9µ (AC)
-
-# Extraction KME STOL78 (AC)
-# Extraction KME Cu-OFE (AC)
-
-# Extraction PEM CuSn6P (AC)
-# Extraction PEM Cu-ETP (AC)
-# Extraction PEM CuZn36 (AC)
-# Extraction PEM CuZn36 H12 (AC)
-# Extraction PEM Ni (AC)
-# Extraction PEM NiP (AC)
-# Extraction PEM Au (AC)
-# Extraction PEM Sn V (AC)
-# Extraction PEM Ag (AC)
-
-# Extraction GRISET CuFe0,1P-FPG (AC)
-# Extraction GRISET  FGP (AC)
-# Extraction GRISET  Cu-ETP (AC)
-# Extraction GRISET  CuSn0,15 (AC)
-# Extraction GRISET  Cu-DLP (AC)
-# Extraction GRISET  CuFe0,1P (AC)
-# Extraction GRISET  Cu-DHP (AC)
-# Extraction GRISET  CuFe2P (AC)
-# Extraction GRISET  CuSn6P (AC)
-
-# Extraction LEGENI Ni TOT (AC)
-# Extraction LEGENI Au TOT (AC)
-# Extraction LEGENI Au total sur s/c Ni total (AC)
-
-# Extraction DPE Sn (AC)
-# Extraction DPE Ag (AC)
-# Extraction DPE Ag20 (AC)
-# Extraction DPE Au b (AC)
-# Extraction DPE Au b20 (AC)
-# Extraction DPE AuCo (AC)
-# Extraction DPE Cu (AC)
-# Extraction DPE Cu20 (AC)
-# Extraction DPE Ni (AC)
-# Extraction DPE NiP (AC)
-def lancer_script():
-    """Script du scrapping"""
-     # Extraction pour Elisabeth
-    extract_1AG2_data(get_soup(reqs.response_lbma))
-    extract_1AU2_data(get_soup(reqs.response_lbma))
-    extract_1AG1_data(get_soup(reqs.response_cookson))
-    extract_1AU3_data(get_soup(reqs.response_cookson))
-    extract_1AG3_data(get_soup(reqs.response_1AG3))
-    extract_2M37_data(get_soup(reqs.response_2M37))
-    extract_3AL1_data(get_soup(reqs.response_3AL1))
-    extract_3CU1_data(get_soup(reqs.response_3CU1))
-    extract_3CU3_data(get_soup(reqs.response_3CU3))
-
-    # Extraction pour les Achats
-    download_pdf(reqs.response_materion, path_url.name_materion, path_url.download_path)
-    extract_materion_alloy360_data(path_url.name_materion)
-    extract_materion_alloy25_data(path_url.name_materion)
-    extract_wielandCu_data(get_soup(reqs.response_wieland))
-    # download_pdf(reqs.response_reynolds, path_url.name_reynolds, path_url.download_path)
-    #extract_reynolds_data(path_url.name_reynolds, wb)
-
-    delete_pdfs()
-
-
-    #extract_kme_data(get_soup(reqs.response_kme))
-    file_path = os.path.join(chemin_excel, 'metals_prices.xlsx')
-    wb.save(file_path)
-    print('Fichier excel créé avec succès !')
-
-
-def choisir_chemin():
-    global chemin_excel
-    chemin_excel = filedialog.askdirectory(initialdir=os.getenv("EXCEL_PATH"))
-
-# def back_main():
-#     print('clique')
-#     settings_frame.pack_forget()
-#     main_frame.pack()
-
-# def show_files():
-#     with open("path_url.py", "r") as file:
-#         content = file.read()
-#         text.delete("1.0", tk.END)
-#         text.insert(tk.END, content)
-
+# Affichage liste des liens
 class FileFrame(tk.Frame):
     def __init__(self, parent, file_path):
         tk.Frame.__init__(self, parent, width=300, height=200)
@@ -585,60 +455,131 @@ class FileFrame(tk.Frame):
                 data_label = tk.Label(self.scrollable_frame, text=line)
                 data_label.pack(side= tk.TOP, fill="x")
 
+
+class MyApp(tk.Tk):
+    def __init__(self):
+        super().__init__()
+        self.geometry("800x450")
+        self.title("Cours des métaux")
+        self.resizable(False, False)
+
+        # Création frame pour chemins d'accès
+        left_frame = tk.Frame(self)
+        right_frame = tk.Frame(self)
+        excel_frame = tk.Frame(left_frame)
+        pdf_frame = tk.Frame(left_frame)
+
+        self.config = configparser.ConfigParser()
+        self.config.read("config.ini")
+
+        self.output_text = tk.Text(right_frame, bg='white', state='disabled', width=40)
+        self.output_text.pack(side='top', fill='both', expand=True)
+
+        self.excel_path = self.config.get("main", "excel_path", fallback="")
+        self.pdf_path = self.config.get("main", "pdf_path", fallback="")
+
+
+        # Création des éléments de la fenêtre
+        title_label = tk.Label(self, text="Diehl Augé Découpage", font=("Inter", 32))
+        launch_button = tk.Button(left_frame, text="Lancer", command=lambda: self.lancer_script(), width=10, height=1, bg="grey", fg="white", font=('Inter', 16))
+
+        excel_label = tk.Label(excel_frame, text="Fichier Excel :")
+        self.excel_label = tk.Label(excel_frame, text=self.excel_path)
+        excel_button = tk.Button(excel_frame, text="Parcourir...", command=self.choose_excelfile)
+
+        pdf_label = tk.Label(pdf_frame, text="Fichier PDF :")
+        self.pdf_label = tk.Label(pdf_frame, text=self.pdf_path)
+        pdf_button = tk.Button(pdf_frame, text="Parcourir...", command=self.choose_pdffile)
+
+        # file_frame = FileFrame(right_frame, "path_url.py")
+
+        # Placement des éléments dans la fenêtre
+        title_label.pack(side=tk.TOP, padx=10, pady=10)
+        launch_button.pack(side=tk.BOTTOM, padx=10,pady=10)
+
+        right_frame.pack(side=tk.RIGHT, padx=10, pady=10)
+        excel_frame.pack(side=tk.TOP, padx=10, pady=10)
+        pdf_frame.pack(side=tk.TOP, padx=10, pady=10)
+        left_frame.pack(side=tk.LEFT, padx=10, pady=10)
+        # file_frame.pack(side=tk.TOP, fill="both", expand=True)
+
+        excel_label.pack(side=tk.TOP, padx=10, pady=10)
+        self.excel_label.pack(side=tk.TOP, padx=10, pady=5)
+        excel_button.pack(side=tk.BOTTOM, padx=10, pady=5)
+
+        pdf_label.pack(side=tk.TOP, padx=10, pady=10)
+        self.pdf_label.pack(side=tk.TOP, padx=10, pady=5)
+        pdf_button.pack(side=tk.BOTTOM, padx=10, pady=5)
+
+        # sauvegarde automatique du chemin d'accès lors de la fermeture de l'application
+        self.protocol("WM_DELETE_WINDOW", self.save_config)
+
+    def update_output(self, text):
+        self.output_text.configure(state="normal")
+        self.output_text.insert(tk.END, text + "\n")
+        self.output_text.configure(state="disabled")
+
+    def choose_excelfile(self):
+        excel_path = filedialog.askdirectory()
+        if excel_path:
+            self.excel_path = excel_path
+            self.excel_label.config(text=self.excel_path)
+
+    def choose_pdffile(self):
+        pdf_path = filedialog.askdirectory()
+        if pdf_path:
+            self.pdf_path = pdf_path
+            self.pdf_label.config(text=self.pdf_path)
+
+    def save_config(self):
+        # sauvegarde du chemin d'accès dans le fichier de configuration
+        self.config["main"] = {"excel_path": self.excel_path, "pdf_path": self.pdf_path}
+        with open("config.ini", "w") as configfile:
+            self.config.write(configfile)
+
+        # fermeture de l'application
+        self.destroy()
+
+    def lancer_script(self):
+        """Script du scrapping"""
+        old_stdout = sys.stdout
+        sys.stdout = mystdout = StringIO()
+        print("Début du process !")
+        extract_1AG2_data(get_soup(reqs.response_lbma))
+        extract_1AU2_data(get_soup(reqs.response_lbma))
+        extract_1AG1_data(get_soup(reqs.response_cookson))
+        extract_1AU3_data(get_soup(reqs.response_cookson))
+        extract_1AG3_data(get_soup(reqs.response_1AG3))
+        extract_2M37_data(get_soup(reqs.response_2M37))
+        extract_3AL1_data(get_soup(reqs.response_3AL1))
+        extract_3CU1_data(get_soup(reqs.response_3CU1))
+        extract_3CU3_data(get_soup(reqs.response_3CU3))
+        download_pdf(reqs.response_materion, path_url.name_materion, self.pdf_path)
+        print("Téléchargement du PDF...")
+        # extract_materion_alloy360_data(path_url.name_materion)
+        extract_2CUB_data(self.pdf_path, path_url.name_materion)
+        # extract_wielandCu_data(get_soup(reqs.response_wieland))
+        # download_pdf(reqs.response_reynolds, path_url.name_reynolds, path_url.download_path)
+        #extract_reynolds_data(path_url.name_reynolds, wb)
+        delete_pdfs(self.pdf_path, path_url.name_materion, path_url.name_reynolds)
+        print('Suppresion du PDF')
+
+        #extract_kme_data(get_soup(reqs.response_kme))
+        file_path = os.path.join(self.excel_path, 'metals_prices.xlsx')
+        wb.save(file_path)
+        print('Fichier excel créé avec succès !')
+        sys.stdout = old_stdout
+        output = mystdout.getvalue()
+        self.update_output(output)
+
 # Lancement du process
 if __name__ == '__main__':
 
     print("Début du process")
     wb = Workbook()
-
-    # Création de la fenêtre principale
-    window = tk.Tk()
-    window.geometry("700x400")
-    window.title("Cours des métaux")
-    window.resizable(False, False)
-
-
-    # Création frame pour chemins d'accès
-    left_frame = tk.Frame(window)
-    acces_frame = tk.Frame(window)
-    excel_frame = tk.Frame(acces_frame)
-    pdf_frame = tk.Frame(acces_frame)
-    sites_frame = tk.Frame(acces_frame)
-
-    # Création des éléments de la fenêtre
-    title_label = tk.Label(window, text="Diehl Augé Découpage", font=("Inter", 32))
-    launch_button = tk.Button(left_frame, text="Lancer", command=lancer_script)
-
-    excel_label = tk.Label(excel_frame, text="Fichier Excel :")
-    excel_entry = tk.Entry(excel_frame, width=30)
-    excel_button = tk.Button(excel_frame, text="...", command=choisir_chemin)
-
-    pdf_label = tk.Label(pdf_frame, text="Fichier PDF :")
-    pdf_entry = tk.Entry(pdf_frame, width=30)
-    pdf_button = tk.Button(pdf_frame, text="...", command=choisir_chemin)
-
-    file_frame = FileFrame(acces_frame, "path_url.py")
-
-
-    # Placement des éléments dans la fenêtre
-    title_label.pack(side=tk.TOP, padx=10, pady=10)
-    launch_button.pack(side=tk.TOP, padx=10,pady=10)
-    acces_frame.pack(side=tk.RIGHT, padx=10, pady=10)
-    excel_frame.pack(side=tk.TOP, padx=10, pady=10)
-    pdf_frame.pack(side=tk.TOP, padx=10, pady=10)
-    left_frame.pack(side=tk.LEFT, padx=10, pady=10)
-    file_frame.pack(side=tk.BOTTOM, fill="both", expand=True)
-
-    excel_label.pack(side=tk.LEFT, padx=10, pady=10)
-    excel_entry.pack(side=tk.LEFT, padx=10, pady=5)
-    excel_button.pack(side=tk.RIGHT, padx=10, pady=5)
-
-    pdf_label.pack(side=tk.LEFT, padx=10, pady=10)
-    pdf_entry.pack(side=tk.LEFT, padx=10, pady=5)
-    pdf_button.pack(side=tk.RIGHT, padx=10, pady=5)
-
+    app = MyApp()
     # Lancement de la boucle principale de la fenêtre
-    window.mainloop()
+    app.mainloop()
 
     print('Fin du process')
     time.sleep(3)
