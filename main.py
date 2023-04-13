@@ -29,7 +29,6 @@ def choice_path():
     print(chemin)
 
 
-
 # Téléchargement des PDFs
 def download_pdf(response, name, folder):
     """Télécharger un fichier PDF et l'enregistrer localement"""
@@ -50,7 +49,7 @@ def get_soup(response):
     else:
         print("Erreur lors de la récupération du contenu HTML")
 
-################################################################
+
 # Extraction données lbma pour 1AG2 (EL)
 def extract_1AG2_data(soup):
     ws = wb.create_sheet('1AG2')
@@ -255,6 +254,75 @@ def extract_3CU3_data(soup):
     ws['A2'] = 'CU'
     ws['B2'] = data.replace('.', ',')
     ws['C2'] = '€'
+
+# Extraction données pour 2CUB (EL)
+def extract_2CUB_data(path_materion, name_materion):
+    """Extraire les données de la table Materion et les ajouter au classeur Excel"""
+    wb.create_sheet("2CUB")
+    wm = wb['2CUB']
+    path = f"{path_materion}/{name_materion}"
+    with open(path, 'rb') as pdf_materion:
+        reader_materion = PdfReader(pdf_materion)
+        page_materion = reader_materion.pages[0]
+        text_materion = page_materion.extract_text()
+
+        lines = text_materion.split('\n')
+
+        alloy_line = None
+        for line in lines:
+            if line.startswith('Alloy 25'):
+                alloy_line = line
+                break
+
+        if alloy_line is not None:
+            # Récupérer la valeur de la 4ème colonne
+            columns = alloy_line.split()
+            if len(columns) >= 4:
+                price_eur = columns[4]
+            else:
+                price_eur = None
+
+            # Ajouter les nombres extraits dans le tableau Excel
+            wm['A3'] = 'Alloy 25'
+            wm['B3'] = price_eur.replace('.', ',')
+            wm['C3'] = '€'
+
+# Extraction données pour 3NI1 (EL)
+def extract_3NI1_data(soup):
+    """Extraction NICKEL Ligne 2, Valeur Colonne 3"""
+    table = soup.find('table', class_='')
+    ws = wb.create_sheet('3NI1')
+    ws.append(['NICKEL'])
+
+    rows = soup.find_all('tr')
+    second_row = rows[2]
+
+    columns = second_row.find_all('td')
+    fourth_column = columns[2]
+    data = fourth_column.text.strip()
+    print (data)
+
+    ws['A2'] = 'Ni'
+    ws['B2'] = data.replace('.', '').replace('¹', '')
+    ws['C2'] = '$'
+
+# Extraction données pour 3SN1 (EL)
+def extract_3SN1_data(soup):
+    """Extraction ETAIN Ligne 3, Valeur Colonne 3"""
+    table = soup.find('table', class_='')
+    ws =  wb.create_sheet('3SN1')
+    ws.append(['ETAIN'])
+    rows = soup.find_all('tr')
+    second_row = rows[3]
+
+    columns = second_row.find_all('td')
+    fourth_column = columns[2]
+    data = fourth_column.text.strip()
+    print (data)
+
+    ws['A2'] = 'Sn'
+    ws['B2'] = data.replace('.', '').replace('¹', '')
+    ws['C2'] = '$'
 ################################################################
 
 # Extraction données KME (AP)
@@ -271,22 +339,8 @@ def extract_kme_data(soup):
             ws.append([data[3], data[1], data[2].replace('*', '').replace('.', '').replace(',', '.')])
 
 ################################################################
-# Extraction données Wieland Cu (AC)
-def extract_wielandCu_data(soup):
-    """Extraire les données de la table Wieland et les ajouter au classeur Excel"""
-    table = soup.find('table', class_='metalinfo-table table-lme-settlement')
-    ws = wb.create_sheet('Cu')
-    ws.append(['WIELAND Cu'])
 
-    tbody = soup.find('tbody')
-    rows = tbody.find_all("tr")
-    value = rows[0].find_all('td')[1].get_text()
-
-    ws['A2'] = 'Cu'
-    ws['B2'] = value.replace(',', '').replace('.', ',')
-    ws['C2'] = '$'
-
-# Extraction données Materion Alloy 360(AC)
+# Extraction données Materion Alloy 360(AC) EN ATTENTE
 def extract_materion_alloy360_data(file_name):
     """Extraire les données de la table Materion et les ajouter au classeur Excel"""
     wb.create_sheet('Materion')
@@ -319,113 +373,20 @@ def extract_materion_alloy360_data(file_name):
             wm['B2'] = price_eur.replace('.', ',')
             wm['C2'] = '€'
 
-#Extraction données pour 2CUB (AC)
-def extract_2CUB_data(path_materion, name_materion):
-    """Extraire les données de la table Materion et les ajouter au classeur Excel"""
-    wb.create_sheet("2CUB")
-    wm = wb['2CUB']
-    path = f"{path_materion}/{name_materion}"
-    with open(path, 'rb') as pdf_materion:
-        reader_materion = PdfReader(pdf_materion)
-        page_materion = reader_materion.pages[0]
-        text_materion = page_materion.extract_text()
-
-        lines = text_materion.split('\n')
-
-        alloy_line = None
-        for line in lines:
-            if line.startswith('Alloy 25'):
-                alloy_line = line
-                break
-
-        if alloy_line is not None:
-            # Récupérer la valeur de la 4ème colonne
-            columns = alloy_line.split()
-            if len(columns) >= 4:
-                price_eur = columns[4]
-            else:
-                price_eur = None
-
-            # Ajouter les nombres extraits dans le tableau Excel
-            wm['A3'] = 'Alloy 25'
-            wm['B3'] = price_eur.replace('.', ',')
-            wm['C3'] = '€'
-
-
-# Extraction données Reynolds (AP)
-def extract_reynolds_data(name_reynolds, wb):
-    """Extraire les données du PDF Reynolds et les ajouter au classeur Excel"""
-    wb.create_sheet('Reynolds')
-    wr = wb['Reynolds']
-
-    with open(path_url.folder_reynolds, 'rb') as pdf_reynolds:
-        reader_reynolds = PdfReader(pdf_reynolds)
-        page_reynolds = reader_reynolds.pages[0]
-        text_reynolds = page_reynolds.extract_text()
-
-        lines_reynolds = text_reynolds.split('\n')
-
-        # Ajouter les données du PDF dans le fichier Excel
-        for line in lines_reynolds:
-            # Séparer les données en colonnes
-            data = line.split()
-            if "EUR/USD" in data:
-                data[1] = data[1].replace(',', '.')
-                # Si "EUR/USD" est trouvé, on a seulement 3 colonnes
-                wr.append([data[0], data[1], data[2]])
-            elif len(data) == 4:
-                # Ajouter "1 TO" à la 4ème colonne
-                if data[0] not in ["LME", "BASE", "METAL", "France"] and data[1] not in ["LME", "BASE", "METAL", "France"]:
-                    if "," in data[1]:
-                        data[1] = data[1].replace(',', '.')
-                    else: data[1] = float(data[1])
-                    # Ajouter "1 TO" à la 4ème colonne
-                    wr.append([data[0], data[1], data[2], data[3]])
-                else:
-                    # Si la dernière colonne ne contient pas "1 TO", ajouter "1 TO" à la 4ème colonne
-                    if data[0] not in ["LME", "BASE", "METAL", "France"]:
-                        # Ajouter "1 TO" à la 4ème colonne
-                        data.append("1 TO")
-                        wr.append([data[0], data[1].replace(',', '.'), data[2], data[3]])
-
 
 # Suppression des PDFs
-def delete_pdfs(path_pdf, name_materion, name_reynolds):
+def delete_pdfs(path_pdf, name_materion):
     """Supprimer deux fichiers PDF"""
     path_materion = f"{path_pdf}/{name_materion}"
-    path_reynolds = f"{path_pdf}/{name_reynolds}"
     try:
         os.remove(path_materion)
-        os.remove(path_reynolds)
         print("Suppression des fichiers PDF terminée avec succès")
     except FileNotFoundError:
         print("Erreur : au moins un des fichiers PDF n'existe pas")
     except Exception as e:
         print(f"Une erreur s'est produite : {e}")
 
-# Extraction WIELAND K55 (AC) => High performance alloys
-def extract_wieland_data(soup):
-    """Extraire les données de la table Wieland et les ajouter au classeur Excel"""
-    table = soup.find('table', class_='metalinfo-table table-')
-    ws = wb.create_sheet('K55')
-    ws.append(['WIELAND'])
-
-    rows = soup.find_all("tr")
-    second_row = rows[0]
-
-    # Trouver la quatrième colonne de la table dans la deuxième ligne
-    columns = second_row.find_all("td")
-    first_column = columns[1]
-
-    # Extraire le texte de la quatrième colonne
-    data = first_column.text.strip()
-    print(data)
-
-    ws['A2'] = 'K55'
-    ws['B2'] = data.replace('.', ',')
-    ws['C2'] = '$'
-
-# Affichage liste des liens
+# Ecran d'affichage liste des liens
 class FileFrame(tk.Frame):
     def __init__(self, parent, file_path):
         tk.Frame.__init__(self, parent, width=300, height=200)
@@ -545,26 +506,23 @@ class MyApp(tk.Tk):
         old_stdout = sys.stdout
         sys.stdout = mystdout = StringIO()
         print("Début du process !")
-        extract_1AG2_data(get_soup(reqs.response_lbma))
-        extract_1AU2_data(get_soup(reqs.response_lbma))
-        extract_1AG1_data(get_soup(reqs.response_cookson))
-        extract_1AU3_data(get_soup(reqs.response_cookson))
+        download_pdf(reqs.response_2CUB, path_url.name_materion, self.pdf_path)
+        print("Téléchargement du PDF...")
+        extract_1AG2_data(get_soup(reqs.response_1AG2))
+        extract_1AU2_data(get_soup(reqs.response_1AU2))
+        extract_1AG1_data(get_soup(reqs.response_1AG1))
+        extract_1AU3_data(get_soup(reqs.response_1AU3))
         extract_1AG3_data(get_soup(reqs.response_1AG3))
         extract_2M37_data(get_soup(reqs.response_2M37))
         extract_3AL1_data(get_soup(reqs.response_3AL1))
         extract_3CU1_data(get_soup(reqs.response_3CU1))
         extract_3CU3_data(get_soup(reqs.response_3CU3))
-        download_pdf(reqs.response_materion, path_url.name_materion, self.pdf_path)
-        print("Téléchargement du PDF...")
-        # extract_materion_alloy360_data(path_url.name_materion)
         extract_2CUB_data(self.pdf_path, path_url.name_materion)
-        # extract_wielandCu_data(get_soup(reqs.response_wieland))
-        # download_pdf(reqs.response_reynolds, path_url.name_reynolds, path_url.download_path)
-        #extract_reynolds_data(path_url.name_reynolds, wb)
-        delete_pdfs(self.pdf_path, path_url.name_materion, path_url.name_reynolds)
+        extract_3NI1_data(get_soup(reqs.response_3NI1))
+        extract_3SN1_data(get_soup(reqs.response_3SN1))
+        delete_pdfs(self.pdf_path, path_url.name_materion)
         print('Suppresion du PDF')
 
-        #extract_kme_data(get_soup(reqs.response_kme))
         file_path = os.path.join(self.excel_path, 'metals_prices.xlsx')
         wb.save(file_path)
         print('Fichier excel créé avec succès !')
