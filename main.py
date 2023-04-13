@@ -4,6 +4,7 @@ import re
 import time
 from bs4 import BeautifulSoup
 from openpyxl import Workbook
+import openpyxl
 from PyPDF2 import PdfReader
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
@@ -20,19 +21,34 @@ from tkinter import filedialog
 import configparser
 import sys
 from io import StringIO
+import datetime
+import mailError
 
 
+now = datetime.datetime.now().date()
+date = now.strftime("%d/%m/%Y")
 
-def choice_path():
-    """Choisir le chemin pour déposer le fichier Excel"""
-    chemin = filedialog.askdirectory()
-    print(chemin)
+config = configparser.ConfigParser()
+config.read('config.ini')
 
+def get_config_value(section, variable):
+    config = configparser.ConfigParser()
+    config.read('config.ini')
+    value = config.get(section, variable)
+    return value
+
+def set_config_value(section, variable, value):
+    config = configparser.ConfigParser()
+    config.read('config.ini')
+    config.set(section, variable, value)
+    with open('config.ini', 'w') as configfile:
+              config.write(configfile)
 
 # Téléchargement des PDFs
 def download_pdf(response, name, folder):
     """Télécharger un fichier PDF et l'enregistrer localement"""
     if response.status_code == 200:
+        print("Connexion réussie")
         path_download = os.path.join(folder, name)
         with open(path_download, "wb") as f:
             f.write(response.content)
@@ -44,7 +60,7 @@ def download_pdf(response, name, folder):
 def get_soup(response):
     """Récupérer le soup à partir de la réponse HTTP"""
     if response.status_code == 200:
-        print("Connexion réussi")
+        print("Connexion réussie")
         return BeautifulSoup(response.content, "html.parser")
     else:
         print("Erreur lors de la récupération du contenu HTML")
@@ -52,8 +68,8 @@ def get_soup(response):
 
 # Extraction données lbma pour 1AG2 (EL)
 def extract_1AG2_data(soup):
+    # ws = wb['1AG2']
     ws = wb.create_sheet('1AG2')
-    ws.append(['Ag LBMA' ])
     s=Service('C:/Users/adrie/OneDrive/Documents/chromedriver.exe')
     browser = webdriver.Chrome(service=s)
     url='https://www.lbma.org.uk/prices-and-data/precious-metal-prices#/table'
@@ -73,15 +89,18 @@ def extract_1AG2_data(soup):
     for row in rows:
         cells = row.find_elements(By.XPATH, '/html/body/div[1]/main/div[1]/div/div/div/div/div[2]/div/div[2]/div[4]/table/tbody/tr[1]/td[2]')
         for cell in (cells):
-            print(cell.text)
-            ws['A2'] = 'AG'
-            ws['B2'] = cell.text.replace('.', ',')
-            ws['C2'] = '$'
+            row_number = ws.max_row +1
+            ws.cell(row=row_number, column=1, value=date)
+            ws.cell(row=row_number, column=2, value=cell.text.replace('.', ','))
+            ws.cell(row=row_number, column=3, value='$')
+            ws.cell(row=row_number, column=4, value='OZ')
+
+    print(cell.text.replace('.', ','))
 
 # Extraction données lbma pour 1AU2 (EL)
 def extract_1AU2_data(soup):
+    # ws = wb['1AU2']
     ws = wb.create_sheet('1AU2')
-    ws.append(['Au LBMA'])
     s=Service('C:/Users/adrie/OneDrive/Documents/chromedriver.exe')
     browser = webdriver.Chrome(service=s)
     url='https://www.lbma.org.uk/prices-and-data/precious-metal-prices#/table'
@@ -96,18 +115,18 @@ def extract_1AU2_data(soup):
     for row in rows:
         cells = row.find_elements(By.XPATH, '/html/body/div[1]/main/div[1]/div/div/div/div/div[2]/div/div[2]/div[4]/table/tbody/tr[1]/td[3]')
         for cell in (cells):
-            print(cell.text)
-            ws['A2'] = 'AU'
-            ws['B2'] = cell.text.replace('.', ',')
-            ws['C2'] = '$'
-
+            row_number = ws.max_row +1
+            ws.cell(row=row_number, column=1, value=date)
+            ws.cell(row=row_number, column=2, value=cell.text.replace('.', ','))
+            ws.cell(row=row_number, column=3, value='$')
+            ws.cell(row=row_number, column=4, value='OZ')
+    print(cell.text.replace('.', ','))
 # Extraction données Cookson pour 1AG1 (EL)
 def extract_1AG1_data(soup):
     """Extraire les données de la table Cookson et les ajouter au classeur Excel"""
     table = soup.find("table", {"class": "main"})
+    # ws = wb['1AG1']
     ws = wb.create_sheet('1AG1')
-    ws.append(['Ag c3E'])
-
     rows = soup.find_all("tr")
     second_row = rows[3]
 
@@ -117,18 +136,19 @@ def extract_1AG1_data(soup):
 
     # Extraire le texte de la quatrième colonne
     data = fourth_column.text.strip()
-
-    ws['A2'] = 'AG'
-    ws['B2'] = data.replace('.', ',')
-    ws['C2'] = '€'
+    row_number = ws.max_row +1
+    ws.cell(row=row_number, column=1, value=date)
+    ws.cell(row=row_number, column=2, value=data.replace('.', ','))
+    ws.cell(row=row_number, column=3, value='€')
+    ws.cell(row=row_number, column=4, value='KG')
+    print(data.replace('.', ','))
 
 # Extraction données Cookson pour 1AU3 (EL)
 def extract_1AU3_data(soup):
     """Extraire les données de la table Cookson et les ajouter au classeur Excel"""
     table = soup.find("table", {"class": "main"})
+    # ws = wb['1AU3']
     ws = wb.create_sheet('1AU3')
-    ws.append(['Au Industriel'])
-
     rows = soup.find_all("tr")
     second_row = rows[2]
 
@@ -138,20 +158,19 @@ def extract_1AU3_data(soup):
 
     # Extraire le texte de la quatrième colonne
     data = last_column.text.strip()
-
-    print(data)
-    ws['A2'] = 'AU'
-    ws['B2'] = data.replace('.', ',').replace('€', '')
-    ws['C2'] = '€'
-
+    row_number = ws.max_row +1
+    ws.cell(row=row_number, column=1, value=date)
+    ws.cell(row=row_number, column=2, value=data.replace('.', ',').replace('€', ''))
+    ws.cell(row=row_number, column=3, value='€')
+    ws.cell(row=row_number, column=4, value='KG')
+    print(data.replace('.', ',').replace('€', ''))
 
 # Extraction données pour 1AG3 (EL)
 def extract_1AG3_data(soup):
     """Extraire les données de la table Cookson et les ajouter au classeur Excel"""
     table = soup.find("table")
+    # ws = wb['1AG3']
     ws = wb.create_sheet('1AG3')
-    ws.append(['Ag Westmetall (Finesliber)'])
-
     rows = soup.find_all("tr")
     second_row = rows[1]
 
@@ -161,19 +180,19 @@ def extract_1AG3_data(soup):
 
     # Extraire le texte de la quatrième colonne
     data = fourth_column.text.strip()
-    print(data)
-
-    ws['A2'] = 'AG'
-    ws['B2'] = data.replace('.', ',')
-    ws['C2'] = '€'
+    row_number = ws.max_row +1
+    ws.cell(row=row_number, column=1, value=date)
+    ws.cell(row=row_number, column=2, value=data.replace('.', ','))
+    ws.cell(row=row_number, column=3, value='€')
+    ws.cell(row=row_number, column=4, value='KG')
+    print(data.replace('.', ','))
 
 # Extraction données pour 2M37 (EL)
 def extract_2M37_data(soup):
     """Extraire les données de la table Cookson et les ajouter au classeur Excel"""
     table = soup.find("table")
+    # ws = wb['2M37']
     ws = wb.create_sheet('2M37')
-    ws.append(['Metalrate CuZn37/38'])
-
     rows = soup.find_all("tr")
     second_row = rows[1]
 
@@ -183,19 +202,19 @@ def extract_2M37_data(soup):
 
     # Extraire le texte de la quatrième colonne
     data = fourth_column.text.strip()
-    print(data)
-
-    ws['A2'] = 'CuZn37/38'
-    ws['B2'] = data.replace('.', ',')
-    ws['C2'] = '€'
+    row_number = ws.max_row +1
+    ws.cell(row=row_number, column=1, value=date)
+    ws.cell(row=row_number, column=2, value=data.replace('.', ','))
+    ws.cell(row=row_number, column=3, value='€')
+    ws.cell(row=row_number, column=4, value='100 KG')
+    print(data.replace('.', ','))
 
 # Extraction données pour 3AL1 (EL)
 def extract_3AL1_data(soup):
     """Extraire les données de la table Cookson et les ajouter au classeur Excel"""
     table = soup.find("table")
+    # ws = wb['3AL1']
     ws = wb.create_sheet('3AL1')
-    ws.append(['LME Settlement Aluminium'])
-
     rows = soup.find_all("tr")
     second_row = rows[6]
 
@@ -205,19 +224,18 @@ def extract_3AL1_data(soup):
 
     # Extraire le texte de la quatrième colonne
     data = fourth_column.text.strip()
-    print(data)
-
-    ws['A2'] = 'AL'
-    ws['B2'] = data.replace(',', '').replace('.', ',')
-    ws['C2'] = '$'
-
+    row_number = ws.max_row +1
+    ws.cell(row=row_number, column=1, value=date)
+    ws.cell(row=row_number, column=2, value=data.replace(',', '').replace('.', ','))
+    ws.cell(row=row_number, column=3, value='$')
+    ws.cell(row=row_number, column=4, value='TO')
+    print(data.replace(',', '').replace('.', ','))
 # Extraction données pour 3CU1 (EL)
 def extract_3CU1_data(soup):
     """Extraire les données de la table Cookson et les ajouter au classeur Excel"""
     table = soup.find("table")
+    # ws = wb['3CU1']
     ws = wb.create_sheet('3CU1')
-    ws.append(['LME Settlement Copper'])
-
     rows = soup.find_all("tr")
     second_row = rows[1]
 
@@ -227,19 +245,18 @@ def extract_3CU1_data(soup):
 
     # Extraire le texte de la quatrième colonne
     data = fourth_column.text.strip()
-    print(data)
-
-    ws['A2'] = 'CU'
-    ws['B2'] = data.replace(',', '').replace('.', ',')
-    ws['C2'] = '$'
-
+    row_number = ws.max_row +1
+    ws.cell(row=row_number, column=1, value=date)
+    ws.cell(row=row_number, column=2, value=data.replace('.', '').replace('.', ','))
+    ws.cell(row=row_number, column=3, value='$')
+    ws.cell(row=row_number, column=4, value='TO')
+    print(data.replace(',', '').replace('.', ','))
 # Extraction données pour 3CU3 (EL)
 def extract_3CU3_data(soup):
     """Extraire les données de la table Cookson et les ajouter au classeur Excel"""
     table = soup.find("table")
+    # ws = wb['3CU3']
     ws = wb.create_sheet('3CU3')
-    ws.append(['Wieland Kopper'])
-
     rows = soup.find_all("tr")
     second_row = rows[1]
 
@@ -249,22 +266,24 @@ def extract_3CU3_data(soup):
 
     # Extraire le texte de la quatrième colonne
     data = fourth_column.text.strip()
-    print(data)
-
-    ws['A2'] = 'CU'
-    ws['B2'] = data.replace('.', ',')
-    ws['C2'] = '€'
+    row_number = ws.max_row +1
+    ws.cell(row=row_number, column=1, value=date)
+    ws.cell(row=row_number, column=2, value=data.replace('.', ','))
+    ws.cell(row=row_number, column=3, value='€')
+    ws.cell(row=row_number, column=4, value='100 KG')
+    print(data.replace('.', ','))
 
 # Extraction données pour 2CUB (EL)
 def extract_2CUB_data(path_materion, name_materion):
     """Extraire les données de la table Materion et les ajouter au classeur Excel"""
-    wb.create_sheet("2CUB")
-    wm = wb['2CUB']
+    # wm = wb['2CUB']
+    wm = wb.create_sheet('2CUB')
     path = f"{path_materion}/{name_materion}"
     with open(path, 'rb') as pdf_materion:
         reader_materion = PdfReader(pdf_materion)
         page_materion = reader_materion.pages[0]
         text_materion = page_materion.extract_text()
+        print('PDF lu')
 
         lines = text_materion.split('\n')
 
@@ -283,16 +302,19 @@ def extract_2CUB_data(path_materion, name_materion):
                 price_eur = None
 
             # Ajouter les nombres extraits dans le tableau Excel
-            wm['A3'] = 'Alloy 25'
-            wm['B3'] = price_eur.replace('.', ',')
-            wm['C3'] = '€'
+            row_number = wm.max_row +1
+            wm.cell(row=row_number, column=1, value=date)
+            wm.cell(row=row_number, column=2, value=price_eur.replace('.', ','))
+            wm.cell(row=row_number, column=3, value='€')
+            wm.cell(row=row_number, column=4, value='KG')
+            print(price_eur.replace('.', ','))
 
 # Extraction données pour 3NI1 (EL)
 def extract_3NI1_data(soup):
     """Extraction NICKEL Ligne 2, Valeur Colonne 3"""
     table = soup.find('table', class_='')
+    # ws = wb['3NI1']
     ws = wb.create_sheet('3NI1')
-    ws.append(['NICKEL'])
 
     rows = soup.find_all('tr')
     second_row = rows[2]
@@ -300,43 +322,32 @@ def extract_3NI1_data(soup):
     columns = second_row.find_all('td')
     fourth_column = columns[2]
     data = fourth_column.text.strip()
-    print (data)
-
-    ws['A2'] = 'Ni'
-    ws['B2'] = data.replace('.', '').replace('¹', '')
-    ws['C2'] = '$'
+    row_number = ws.max_row +1
+    ws.cell(row=row_number, column=1, value=date)
+    ws.cell(row=row_number, column=2, value=data.replace('.', '').replace('¹', ''))
+    ws.cell(row=row_number, column=3, value='$')
+    ws.cell(row=row_number, column=4, value='TO')
+    print(data.replace('.', '').replace('¹', ''))
 
 # Extraction données pour 3SN1 (EL)
 def extract_3SN1_data(soup):
     """Extraction ETAIN Ligne 3, Valeur Colonne 3"""
     table = soup.find('table', class_='')
-    ws =  wb.create_sheet('3SN1')
-    ws.append(['ETAIN'])
+    # ws =  wb['3SN1']
+    ws = wb.create_sheet('3SN1')
     rows = soup.find_all('tr')
     second_row = rows[3]
 
     columns = second_row.find_all('td')
     fourth_column = columns[2]
     data = fourth_column.text.strip()
-    print (data)
+    row_number = ws.max_row +1
+    ws.cell(row=row_number, column=1, value=date)
+    ws.cell(row=row_number, column=2, value=data.replace('.', '').replace('¹', ''))
+    ws.cell(row=row_number, column=3, value='$')
+    ws.cell(row=row_number, column=4, value='TO')
 
-    ws['A2'] = 'Sn'
-    ws['B2'] = data.replace('.', '').replace('¹', '')
-    ws['C2'] = '$'
-################################################################
-
-# Extraction données KME (AP)
-def extract_kme_data(soup):
-    """Extraire les données de la table KME et les ajouter au classeur Excel"""
-    table = soup.find('table', class_='table table-condensed table-hover table-striped')
-    ws = wb.create_sheet('KME')
-
-    for row in table.find_all('tr'):
-        data = []
-        for cell in row.find_all('td')[:4]:
-            data.append(cell.text.strip())
-        if len(data) == 4:
-            ws.append([data[3], data[1], data[2].replace('*', '').replace('.', '').replace(',', '.')])
+    print(data.replace('.', '').replace('¹', ''))
 
 ################################################################
 
@@ -430,14 +441,11 @@ class MyApp(tk.Tk):
         excel_frame = tk.Frame(left_frame)
         pdf_frame = tk.Frame(left_frame)
 
-        self.config = configparser.ConfigParser()
-        self.config.read("config.ini")
-
-        self.output_text = tk.Text(right_frame, bg='white', state='disabled', width=40)
+        self.output_text = tk.Text(right_frame, bg='white', state='disabled', width=50)
         self.output_text.pack(side='top', fill='both', expand=True)
 
-        self.excel_path = self.config.get("main", "excel_path", fallback="")
-        self.pdf_path = self.config.get("main", "pdf_path", fallback="")
+        self.excel_path = get_config_value("main", "excel_path")
+        self.pdf_path = get_config_value("main", "pdf_path")
 
 
         # Création des éléments de la fenêtre
@@ -485,20 +493,26 @@ class MyApp(tk.Tk):
         if excel_path:
             self.excel_path = excel_path
             self.excel_label.config(text=self.excel_path)
+            set_config_value('main', 'excel_path', self.excel_path)
+            self.save_config
 
     def choose_pdffile(self):
         pdf_path = filedialog.askdirectory()
         if pdf_path:
             self.pdf_path = pdf_path
             self.pdf_label.config(text=self.pdf_path)
+            set_config_value('main', 'pdf_path', self.pdf_path)
+            self.save_config
 
     def save_config(self):
-        # sauvegarde du chemin d'accès dans le fichier de configuration
-        self.config["main"] = {"excel_path": self.excel_path, "pdf_path": self.pdf_path}
-        with open("config.ini", "w") as configfile:
-            self.config.write(configfile)
 
-        # fermeture de l'application
+        # Enregistrement des valeurs dans la configuration
+        config.set('main', 'excel_path', self.excel_path)
+        config.set('main', 'pdf_path', self.pdf_path)
+        with open("config.ini", "w") as configfile:
+            config.write(configfile)
+
+        # Fermeture de l'application
         self.destroy()
 
     def lancer_script(self):
@@ -507,7 +521,6 @@ class MyApp(tk.Tk):
         sys.stdout = mystdout = StringIO()
         print("Début du process !")
         download_pdf(reqs.response_2CUB, path_url.name_materion, self.pdf_path)
-        print("Téléchargement du PDF...")
         extract_1AG2_data(get_soup(reqs.response_1AG2))
         extract_1AU2_data(get_soup(reqs.response_1AU2))
         extract_1AG1_data(get_soup(reqs.response_1AG1))
@@ -521,11 +534,10 @@ class MyApp(tk.Tk):
         extract_3NI1_data(get_soup(reqs.response_3NI1))
         extract_3SN1_data(get_soup(reqs.response_3SN1))
         delete_pdfs(self.pdf_path, path_url.name_materion)
-        print('Suppresion du PDF')
-
         file_path = os.path.join(self.excel_path, 'metals_prices.xlsx')
         wb.save(file_path)
         print('Fichier excel créé avec succès !')
+
         sys.stdout = old_stdout
         output = mystdout.getvalue()
         self.update_output(output)
@@ -536,8 +548,9 @@ if __name__ == '__main__':
     print("Début du process")
     wb = Workbook()
     app = MyApp()
+    # wb = openpyxl.load_workbook(app.excel_path)
     # Lancement de la boucle principale de la fenêtre
     app.mainloop()
-
+    # wb.save(app.excel_path)
     print('Fin du process')
     time.sleep(3)
