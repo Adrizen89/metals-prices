@@ -29,8 +29,8 @@ $ Créer un fichier ".env" avec les variables suivantes :
 | Métal | Devise | Unité | Code SAP | Description | Lien |
 |:--------------|:-------------:|--------------:|--------------:|--------------:|--------------:|
 | STOL78 | € | KG | 2CUB | Alloy 25 | materion |
-|  |  |  |  |  |  |
-|  |  |  |  |  |  |
+| Ni | $ | TO | 3NI1 |  | https://www.kme.com/fr/services/cours-des-metaux |
+| Sn | $ | TO | 3SN1 |  | https://www.kme.com/fr/services/cours-des-metaux |
 |  |  |  |  |  |  |
 |  |  |  |  |  |  |
 |  |  |  |  |  |  |
