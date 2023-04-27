@@ -9,6 +9,8 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from webdriver_manager.chrome import ChromeDriverManager
 from app.data_list import sites
+import os
+from selenium.common.exceptions import NoSuchElementException, TimeoutException
 
 config = configparser.ConfigParser()
 config.read('config.ini')
@@ -160,6 +162,10 @@ def extract_2CUB(soup):
 
     pdf_path = config.get('main', 'pdf_path')
     name_pdf = config.get('main', 'name_pdf')
+
+    if not pdf_path:
+        pdf_path = os.getcwd()
+
     path = f"{pdf_path}/{name_pdf}"
     with open(path, 'rb') as pdf_materion:
         reader_materion = PdfReader(pdf_materion)
@@ -188,51 +194,74 @@ def extract_2CUB(soup):
 
 # Extraction données lbma pour 1AG2 (EL)
 def extract_1AG2(soup):
-    path_driver_chrome = config.get('main', 'path_driver_chrome')
-    s=Service(path_driver_chrome)
-    browser = webdriver.Chrome(service=s)
-    url= 'https://www.lbma.org.uk/prices-and-data/precious-metal-prices#/table'
-    browser.get(url)
-    browser.maximize_window()
-    time.sleep(5)
-    table_path = "/html/body/div[1]/main/div[1]/div/div/div/div/div[2]/div/div[2]/div[4]/table"
+    try:
+        path_driver_chrome = config.get('main', 'path_driver_chrome')
+        s=Service(path_driver_chrome)
+        browser = webdriver.Chrome(service=s)
+        url= 'https://www.lbma.uk/prices-and-data/precious-metal-prices#/table'
+        try:
+            browser.get(url)
+            browser.maximize_window()
+            time.sleep(5)
+            table_path = "/html/body/div[1]/main/div[1]/div/div/div/div/div[2]/div/div[2]/div[4]/table"
 
-    table = browser.find_elements(By.XPATH, "/html/body/div[1]/main/div[1]/div/div/div/div/div[2]/div/div[2]/div[4]/table")
-    rows = browser.find_elements(By.XPATH, '/html/body/div[1]/main/div[1]/div/div/div/div/div[2]/div/div[2]/div[4]/table/tbody/tr[1]')
-    drop = browser.find_elements(By.CLASS_NAME, 'dropdown-toggle')
-    drop[0].click()
-    a_drop = browser.find_elements(By.LINK_TEXT, 'Silver')
-    a_drop[0].click()
-    time.sleep(4)
+            table = browser.find_elements(By.XPATH, "/html/body/div[1]/main/div[1]/div/div/div/div/div[2]/div/div[2]/div[4]/table")
+            rows = browser.find_elements(By.XPATH, '/html/body/div[1]/main/div[1]/div/div/div/div/div[2]/div/div[2]/div[4]/table/tbody/tr[1]')
+            drop = browser.find_elements(By.CLASS_NAME, 'dropdown-toggle')
+            drop[0].click()
+            a_drop = browser.find_elements(By.LINK_TEXT, 'Silver')
+            a_drop[0].click()
+            time.sleep(4)
 
-    for row in rows:
-        cells = row.find_elements(By.XPATH, '/html/body/div[1]/main/div[1]/div/div/div/div/div[2]/div/div[2]/div[4]/table/tbody/tr[1]/td[2]')
-        for cell in (cells):
-            formatted_data = cell.text.replace('.', ',')
+            for row in rows:
+                cells = row.find_elements(By.XPATH, '/html/body/div[1]/main/div[1]/div/div/div/div/div[2]/div/div[2]/div[4]/table/tbody/tr[1]/td[2]')
+                for cell in (cells):
+                    formatted_data = cell.text.replace('.', ',')
+        except Exception as e:
+            print (f"Erreur : {e}")
+            formatted_data = "err"
+        finally:
+            browser.quit()
 
-    return formatted_data
+    except NoSuchElementException:
+        print("Erreur : élément non trouvé")
+        formatted_data = None
+    except TimeoutException:
+        print("Erreur : délai d'attente dépassé")
+        formatted_data = None
+    finally:
+        return formatted_data
 
 # Extraction données lbma pour 1AU2 (EL)
 def extract_1AU2(soup):
 
     
-    s=Service('C:/Users/adrie/OneDrive/Documents/chromedriver.exe')
-    browser = webdriver.Chrome(service=s)
-    url='https://www.lbma.org.uk/prices-and-data/precious-metal-prices#/table'
-    browser.get(url)
-    browser.maximize_window()
-    time.sleep(5)
-    table_path = "/html/body/div[1]/main/div[1]/div/div/div/div/div[2]/div/div[2]/div[4]/table"
+    try:
+        s=Service('C:/Users/adrie/OneDrive/Documents/chromedriver.exe')
+        browser = webdriver.Chrome(service=s)
+        url='https://www.lbma.org.uk/prices-and-data/precious-metal-prices#/table'
+        browser.get(url)
+        browser.maximize_window()
+        time.sleep(5)
+        table_path = "/html/body/div[1]/main/div[1]/div/div/div/div/div[2]/div/div[2]/div[4]/table"
 
-    table = browser.find_elements(By.XPATH, "/html/body/div[1]/main/div[1]/div/div/div/div/div[2]/div/div[2]/div[4]/table")
-    rows = browser.find_elements(By.XPATH, '/html/body/div[1]/main/div[1]/div/div/div/div/div[2]/div/div[2]/div[4]/table/tbody/tr[1]')
+        table = browser.find_elements(By.XPATH, "/html/body/div[1]/main/div[1]/div/div/div/div/div[2]/div/div[2]/div[4]/table")
+        rows = browser.find_elements(By.XPATH, '/html/body/div[1]/main/div[1]/div/div/div/div/div[2]/div/div[2]/div[4]/table/tbody/tr[1]')
 
-    for row in rows:
-        cells = row.find_elements(By.XPATH, '/html/body/div[1]/main/div[1]/div/div/div/div/div[2]/div/div[2]/div[4]/table/tbody/tr[1]/td[3]')
-        for cell in (cells):
-            formatted_data = cell.text.replace('.', ',')
+        for row in rows:
+            cells = row.find_elements(By.XPATH, '/html/body/div[1]/main/div[1]/div/div/div/div/div[2]/div/div[2]/div[4]/table/tbody/tr[1]/td[3]')
+            for cell in (cells):
+                formatted_data = cell.text.replace('.', ',')
+    except NoSuchElementException:
+        print("Erreur : élément non trouvé")
+        formatted_data = None
+    except TimeoutException:
+        print("Erreur : délai d'attente dépassé")
+        formatted_data = None
 
-    return formatted_data
+
+    finally:
+        return formatted_data
 
 # Extraction données 2M30
 def extract_2M30(soup):

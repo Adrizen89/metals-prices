@@ -3,18 +3,18 @@ from tkinter import filedialog
 import configparser
 from bs4 import BeautifulSoup
 import requests
-from .config import get_config_value
-from .config import set_config_value
+from .config import get_config_value, get_pdf_path, set_config_value
 from .data_list import sites as sites
-import utils_scrapping as scrapping
-from .utils_pdf import download_pdf
-from .utils_pdf import delete_pdfs
+import app.utils_scrapping as scrapping
+from .utils_pdf import download_pdf, delete_pdfs
 import datetime
-from openpyxl import load_workbook
+from openpyxl import load_workbook, Workbook
 import sys
+import os
 from io import StringIO
 from ressources.colors import bg_color, bg_color_light, bg_color, text_light, text_medium, text_dark
-
+import tkinter.messagebox as messagebox
+from app.utils_format import check_and_return_value
 
 config = configparser.ConfigParser()
 config.read('config.ini')
@@ -46,24 +46,28 @@ class MyApp(tk.Tk):
         self.driver_chrome_path = get_config_value("main", "path_driver_chrome")
         self.name_pdf_path = get_config_value("main", "name_pdf")
 
+        self.excel_path_var = tk.StringVar()
+        self.excel_path_var.set(self.excel_path)
+
+        self.pdf_path = get_pdf_path()
 
         # Création des éléments de la fenêtre
-        title_label = tk.Label(self, text="Diehl Augé Découpage", font=("Inter", 32, 'bold'), fg=text_medium, bg=bg_color)
-        launch_button = tk.Button(left_frame, text="Lancer", command=lambda: self.lancer_script(sites=sites), width=10, height=1, bg=text_medium, fg=bg_color, font=('Inter', 16))
+        title_label = tk.Label(self, text="Diehl Augé Découpage", font=("Tahoma", 32, 'bold'), fg=text_medium, bg=bg_color)
+        launch_button = tk.Button(left_frame, text="Lancer", command=lambda: self.lancer_script(sites=sites), width=10, height=1, bg=text_medium, fg=bg_color, font=('Tahoma', 16))
 
-        excel_label = tk.Label(excel_frame, text="Fichier Excel :", font=("Inter", 12, 'bold'), fg=text_medium, bg=bg_color)
-        self.excel_label = tk.Label(excel_frame, text=self.excel_path, fg=bg_color, bg=text_medium, width=50)
+        excel_label = tk.Label(excel_frame, text="Fichier Excel :", font=("Tahoma", 12, 'bold'), fg=text_medium, bg=bg_color)
+        self.excel_label = tk.Label(excel_frame, textvariable=self.excel_path_var, fg=bg_color, bg=text_medium, width=50)
         excel_button = tk.Button(excel_frame, text="Parcourir...", command=self.choose_excelfile, width=10, height=1, bg=text_dark, fg=text_light)
 
-        driver_chrome_label = tk.Label(driver_chrome_frame, text="Fichier Driver Chrome :", font=("Inter", 12, 'bold'), fg=text_medium, bg=bg_color)
+        driver_chrome_label = tk.Label(driver_chrome_frame, text="Fichier Driver Chrome :", font=("Tahoma", 12, 'bold'), fg=text_medium, bg=bg_color)
         self.driver_chrome_label = tk.Label(driver_chrome_frame, text=self.driver_chrome_path, fg=bg_color, bg=text_medium, width=50)
         driver_chrome_button = tk.Button(driver_chrome_frame, text="Parcourir...", command=self.choose_driver_chrome, width=10, height=1, bg=text_dark, fg=text_light)
 
-        pdf_label = tk.Label(pdf_frame, text="Fichier PDF :", font=("Inter", 12, 'bold'), fg=text_medium, bg=bg_color)
+        pdf_label = tk.Label(pdf_frame, text="Fichier PDF :", font=("Tahoma", 12, 'bold'), fg=text_medium, bg=bg_color)
         self.pdf_label = tk.Label(pdf_frame, text=self.pdf_path, fg=bg_color, bg=text_medium, width=50)
         pdf_button = tk.Button(pdf_frame, text="Parcourir...", command=self.choose_pdffile, width=10, height=1, bg=text_dark, fg=text_light)
 
-        name_pdf_label = tk.Label(name_pdf_frame, text='Non du fichier PDF', font=("Inter", 12, 'bold'), fg=text_medium, bg=bg_color)
+        name_pdf_label = tk.Label(name_pdf_frame, text='Nom du fichier PDF', font=("Tahoma", 12, 'bold'), fg=text_medium, bg=bg_color)
         self.name_pdf_label = tk.Entry(name_pdf_frame, width=50, bg=text_light, fg=bg_color)
         self.name_pdf_label.insert(0, self.name_pdf_path)
         self.name_pdf_label.config(state="readonly", bg=text_medium, fg=bg_color, width=60)
@@ -172,10 +176,30 @@ class MyApp(tk.Tk):
     def lancer_script(self, sites):
         old_stdout = sys.stdout
         sys.stdout = mystdout = StringIO()
-        wb = load_workbook(self.excel_path)
 
+        if not self.driver_chrome_path:
+            messagebox.showerror("Erreur", "Le chemin d'accès pour le driver Google Chrome est manquant. Veuillez le renseigner dans le fichier config.ini.")
+            return
+        if not self.excel_path or not os.path.exists(self.excel_path):
+            self.excel_path = os.path.join(os.getcwd(), "metals_prices.xlsx")
+            wb = Workbook()
+            for site in sites:
+                wb.create_sheet(site['name'])
+
+            wb.save(self.excel_path)
+            set_config_value("main", "excel_path", str(self.excel_path))
+
+            self.excel_path_var.set(self.excel_path)
+            
+        else:
+            wb = load_workbook(self.excel_path)
+
+        error_occurred = False
+        txterr = ""
         for site in sites:
             response = requests.get(site['url'])
+            
+
             soup = BeautifulSoup(response.content, "html.parser")
             data_extraction_function_name = site['func']
             if hasattr(scrapping, data_extraction_function_name):
@@ -183,20 +207,28 @@ class MyApp(tk.Tk):
                     download_pdf(response, site['name_pdf'], self.pdf_path)
                 else:
                     print('')
-
+                
                 data_extraction_function = getattr(scrapping, data_extraction_function_name)
-                data = data_extraction_function(soup)
-
                 sheet = wb[site["name"]]
+                try:
+                    data = data_extraction_function(soup)
+                    data, txterr = check_and_return_value(data, sheet, site['format_func'], txterr)
+                except ValueError:
+                    txterr = f"Erreur de la fonction {data_extraction_function_name}"
+                    error_occurred = True
+
                 row_number = sheet.max_row +1
                 sheet.cell(row = row_number, column = 1, value = date)
                 sheet.cell(row = row_number, column = 2, value = data)
                 sheet.cell(row = row_number, column = 3, value = site['devise'])
                 sheet.cell(row = row_number, column = 4, value = site['unit'])
                 print (f"Valeur pour le site {site['name']} : {data}")
-                sys.stdout = old_stdout
-                output = mystdout.getvalue()
-                self.update_output(output)
+                output = f"Valeur pour le site {site['name']} : {data}"
+                if error_occurred:
+                    print(txterr)
+                    self.update_output(txterr)
+                else:
+                    self.update_output(output)
 
                 wb.save(self.excel_path)
             else:
