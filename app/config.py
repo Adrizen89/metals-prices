@@ -1,10 +1,18 @@
 import configparser
 import os
+import sys
 
-def get_config_value(section, variable):
+def get_config_value(section, key):
     config = configparser.ConfigParser()
-    config.read('config.ini')
-    value = config.get(section, variable)
+
+    if getattr(sys, 'frozen', False):
+         exe_path = os.path.join(sys.executable)
+         config_file_path = os.path.join(exe_path, 'config.ini')
+    else:
+         config_file_path = "config.ini"
+
+    config.read(config_file_path)
+    value = config.get(section, key)
     return value
 
 def set_config_value(section, variable, value):
