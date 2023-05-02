@@ -1,10 +1,12 @@
-def check_and_return_value(value, sheet, format_func, txterr):
+def check_and_return_value(value, sheet, format_func, txterr, site, data):
     try:
-        float(format_func(value))
+        valueformat = format_func(value)
+        float(valueformat.replace(',', '.'))
+        txterr = f"Valeur pour le site {site['name']} : {data}"
     except ValueError:
         last_row = sheet.max_row
         value = sheet.cell(row=last_row, column=2).value
-        output = "Erreur, valeur précédente récupérée !"
+        txterr = f"Valeur remplacé pour le site {site['name']} : {value}"
     return value, txterr
 
 

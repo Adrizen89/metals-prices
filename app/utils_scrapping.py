@@ -132,7 +132,7 @@ def extract_3CU3(soup):
 # Extraction données pour 3NI1 (EL)
 def extract_3NI1(soup):
     """Extraction NICKEL Ligne 2, Valeur Colonne 3"""
-    table = soup.find('table', class_='')
+    table = soup.find('table', class_='table table-condensed table-hover table-striped')
 
     rows = soup.find_all('tr')
     second_row = rows[2]
@@ -198,7 +198,7 @@ def extract_1AG2(soup):
         path_driver_chrome = config.get('main', 'path_driver_chrome')
         s=Service(path_driver_chrome)
         browser = webdriver.Chrome(service=s)
-        url= 'https://www.lbma.uk/prices-and-data/precious-metal-prices#/table'
+        url= 'https://www.lbma.org.uk/prices-and-data/precious-metal-prices#/table'
         try:
             browser.get(url)
             browser.maximize_window()

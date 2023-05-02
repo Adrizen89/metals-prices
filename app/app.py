@@ -3,6 +3,7 @@ from tkinter import filedialog
 import configparser
 from bs4 import BeautifulSoup
 import requests
+from requests.exceptions import RequestException
 from .config import get_config_value, get_pdf_path, set_config_value
 from .data_list import sites as sites
 import app.utils_scrapping as scrapping
@@ -194,11 +195,15 @@ class MyApp(tk.Tk):
         else:
             wb = load_workbook(self.excel_path)
 
-        error_occurred = False
         txterr = ""
         for site in sites:
-            response = requests.get(site['url'])
-            
+            try:
+                response = requests.get(site['url'])
+                response.raise_for_status()
+            except RequestException as e:
+                txterr = f"Erreur de connexion pour le site de {site['name']} : {e}"
+                self.update_output(txterr)
+                continue
 
             soup = BeautifulSoup(response.content, "html.parser")
             data_extraction_function_name = site['func']
@@ -207,15 +212,12 @@ class MyApp(tk.Tk):
                     download_pdf(response, site['name_pdf'], self.pdf_path)
                 else:
                     print('')
-                
+
                 data_extraction_function = getattr(scrapping, data_extraction_function_name)
                 sheet = wb[site["name"]]
-                try:
-                    data = data_extraction_function(soup)
-                    data, txterr = check_and_return_value(data, sheet, site['format_func'], txterr)
-                except ValueError:
-                    txterr = f"Erreur de la fonction {data_extraction_function_name}"
-                    error_occurred = True
+                data = data_extraction_function(soup)
+                data, txterr = check_and_return_value(data, sheet, site['format_func'], txterr, site, data)
+
 
                 row_number = sheet.max_row +1
                 sheet.cell(row = row_number, column = 1, value = date)
@@ -223,12 +225,8 @@ class MyApp(tk.Tk):
                 sheet.cell(row = row_number, column = 3, value = site['devise'])
                 sheet.cell(row = row_number, column = 4, value = site['unit'])
                 print (f"Valeur pour le site {site['name']} : {data}")
-                output = f"Valeur pour le site {site['name']} : {data}"
-                if error_occurred:
-                    print(txterr)
-                    self.update_output(txterr)
-                else:
-                    self.update_output(output)
+
+                self.update_output(txterr)
 
                 wb.save(self.excel_path)
             else:
