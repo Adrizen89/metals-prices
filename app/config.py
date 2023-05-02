@@ -12,6 +12,11 @@ def get_config_value(section, key):
          config_file_path = "config.ini"
 
     config.read(config_file_path)
+    # Imprimer le contenu de config.ini pour le débogage
+    with open(config_file_path, 'r') as f:
+        content = f.read()
+        print("Contenu de config.ini:")
+        print(content)
     value = config.get(section, key)
     return value
 
