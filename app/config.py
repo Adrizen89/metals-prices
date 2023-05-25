@@ -2,18 +2,36 @@ import configparser
 import os
 import sys
 
+
+def is_executable():
+    return getattr(sys, 'frozen', False)
+
+
+def get_config_path():
+    if is_executable():
+        application_path = os.path.dirname(sys.executable)
+    else:
+        application_path = os.path.dirname(os.path.abspath(__file__))
+    config_path = os.path.join(application_path, 'config.ini')
+    if not os.path.exists(config_path) and is_executable():
+        # Si le fichier config.ini n'existe pas à côté de l'exécutable, recherchez-le dans le répertoire du script
+        config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.ini')
+    return os.path.abspath(config_path)
+
+def get_code_config_path():
+    if not is_executable():
+        return os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.ini')
+    return None
+
+
 def get_config_value(section, key):
     config = configparser.ConfigParser()
-
-    if getattr(sys, 'frozen', False):
-         exe_path = os.path.join(sys.executable)
-         config_file_path = os.path.join(exe_path, 'config.ini')
-    else:
-         config_file_path = "config.ini"
-
-    config.read(config_file_path)
+    config_path = get_config_path()
+    if config_path is None:
+        config_path = get_code_config_path()
+    config.read(config_path)
     # Imprimer le contenu de config.ini pour le débogage
-    with open(config_file_path, 'r') as f:
+    with open(config_path, 'r') as f:
         content = f.read()
         print("Contenu de config.ini:")
         print(content)
@@ -22,10 +40,15 @@ def get_config_value(section, key):
 
 def set_config_value(section, variable, value):
     config = configparser.ConfigParser()
-    config.read('config.ini')
+    config_path = get_config_path()
+    if config_path is None:
+        config_path = get_code_config_path()
+    config.read(config_path)
     config.set(section, variable, value)
-    with open('config.ini', 'w') as configfile:
-              config.write(configfile)
+    with open(config_path, 'w') as configfile:
+        config.write(configfile)
+
+
 
 def get_pdf_path():
     pdf_path = get_config_value("main", "pdf_path")

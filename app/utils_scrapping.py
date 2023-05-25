@@ -11,6 +11,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 from app.data_list import sites
 import os
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
+from .config import get_config_value, get_pdf_path, set_config_value
 
 config = configparser.ConfigParser()
 config.read('config.ini')
@@ -160,82 +161,87 @@ def extract_3SN1(soup):
 def extract_2CUB(soup):
     """Extraire les données de la table Materion et les ajouter au classeur Excel"""
 
-    pdf_path = config.get('main', 'pdf_path')
-    name_pdf = config.get('main', 'name_pdf')
+    pdf_path = get_config_value('main', 'pdf_path')
+    name_pdf = get_config_value('main', 'name_pdf')
 
     if not pdf_path:
         pdf_path = os.getcwd()
 
     path = f"{pdf_path}/{name_pdf}"
-    with open(path, 'rb') as pdf_materion:
-        reader_materion = PdfReader(pdf_materion)
-        page_materion = reader_materion.pages[0]
-        text_materion = page_materion.extract_text()
-        print('PDF lu')
+    try:
+        with open(path, 'rb') as pdf_materion:
+            reader_materion = PdfReader(pdf_materion)
+            page_materion = reader_materion.pages[0]
+            text_materion = page_materion.extract_text()
+            print('PDF lu')
 
-        lines = text_materion.split('\n')
+            lines = text_materion.split('\n')
 
-        alloy_line = None
-        for line in lines:
-            if line.startswith('Alloy 25'):
-                alloy_line = line
-                break
+            alloy_line = None
+            for line in lines:
+                if line.startswith('Alloy 25'):
+                    alloy_line = line
+                    break
 
-        if alloy_line is not None:
-            # Récupérer la valeur de la 4ème colonne
-            columns = alloy_line.split()
-            if len(columns) >= 4:
-                price_eur = columns[4]
-            else:
-                price_eur = None
+            if alloy_line is not None:
+                # Récupérer la valeur de la 4ème colonne
+                columns = alloy_line.split()
+                if len(columns) >= 4:
+                    price_eur = columns[4]
+                else:
+                    price_eur = None
 
-            formatted_data = price_eur.replace('.', ',')
-            return formatted_data
+                formatted_data = price_eur.replace('.', ',')
+                return formatted_data
+    except FileNotFoundError:
+        print(f"Le fichier PDF '{name_pdf}' n'a pas été trouvé. Passage à autre chose.")
+        formatted_data = 'err'
+        return formatted_data
 
 # Extraction données lbma pour 1AG2 (EL)
 def extract_1AG2(soup):
+    formatted_data = "Init"
+    
+    path_driver_chrome = get_config_value('main', 'path_driver_chrome')
+    s=Service(path_driver_chrome)
+    browser = webdriver.Chrome(service=s)
+    url= 'https://www.lbma.org.uk/prices-and-data/precious-metal-prices#/table'
     try:
-        path_driver_chrome = config.get('main', 'path_driver_chrome')
-        s=Service(path_driver_chrome)
-        browser = webdriver.Chrome(service=s)
-        url= 'https://www.lbma.org.uk/prices-and-data/precious-metal-prices#/table'
-        try:
-            browser.get(url)
-            browser.maximize_window()
-            time.sleep(5)
-            table_path = "/html/body/div[1]/main/div[1]/div/div/div/div/div[2]/div/div[2]/div[4]/table"
+        browser.get(url)
+        browser.maximize_window()
+        time.sleep(5)
+            # table_path = "/html/body/div[1]/main/div[1]/div/div/div/div/div[2]/div/div[2]/div[4]/table"
 
-            table = browser.find_elements(By.XPATH, "/html/body/div[1]/main/div[1]/div/div/div/div/div[2]/div/div[2]/div[4]/table")
-            rows = browser.find_elements(By.XPATH, '/html/body/div[1]/main/div[1]/div/div/div/div/div[2]/div/div[2]/div[4]/table/tbody/tr[1]')
-            drop = browser.find_elements(By.CLASS_NAME, 'dropdown-toggle')
-            drop[0].click()
-            a_drop = browser.find_elements(By.LINK_TEXT, 'Silver')
-            a_drop[0].click()
-            time.sleep(4)
+            # table = browser.find_elements(By.XPATH, "/html/body/div[1]/main/div[1]/div/div/div/div/div[2]/div/div[2]/div[4]/table")
+            # rows = browser.find_elements(By.XPATH, '/html/body/div[1]/main/div[1]/div/div/div/div/div[2]/div/div[2]/div[4]/table/tbody/tr[1]')
+            # drop = browser.find_elements(By.CLASS_NAME, 'dropdown-toggle')
+            # drop[0].click()
+            # a_drop = browser.find_elements(By.LINK_TEXT, 'Silver')
+            # a_drop[0].click()
+            # time.sleep(4)
 
-            for row in rows:
-                cells = row.find_elements(By.XPATH, '/html/body/div[1]/main/div[1]/div/div/div/div/div[2]/div/div[2]/div[4]/table/tbody/tr[1]/td[2]')
-                for cell in (cells):
-                    formatted_data = cell.text.replace('.', ',')
-        except Exception as e:
-            print (f"Erreur : {e}")
-            formatted_data = "err"
-        finally:
-            browser.quit()
+        table = browser.find_element(By.CSS_SELECTOR, "div.pepper-responsive-table table")
+        first_row = table.find_element(By.CSS_SELECTOR, "tbody tr:first-child")
+        formatted_data = first_row.find_element(By.CSS_SELECTOR, "td:nth-child(3)").text
 
-    except NoSuchElementException:
-        print("Erreur : élément non trouvé")
-        formatted_data = None
-    except TimeoutException:
-        print("Erreur : délai d'attente dépassé")
-        formatted_data = None
-    finally:
         return formatted_data
+
+            # for row in rows:
+            #     cells = row.find_elements(By.XPATH, '/html/body/div[1]/main/div[1]/div/div/div/div/div[2]/div/div[2]/div[4]/table/tbody/tr[1]/td[2]')
+            #     for cell in (cells):
+            #         formatted_data = cell.text.replace('.', ',')
+
+    except Exception as e:
+        print (f"Erreur : {e}")
+        formatted_data = "err"
+    finally:
+        browser.quit()
+
 
 # Extraction données lbma pour 1AU2 (EL)
 def extract_1AU2(soup):
 
-    
+    formatted_data = "init"
     try:
         s=Service('C:/Users/adrie/OneDrive/Documents/chromedriver.exe')
         browser = webdriver.Chrome(service=s)
@@ -261,6 +267,7 @@ def extract_1AU2(soup):
 
 
     finally:
+        print(formatted_data)
         return formatted_data
 
 # Extraction données 2M30

@@ -1,4 +1,5 @@
-def check_and_return_value(value, sheet, format_func, txterr, site, data):
+def check_and_return_value(value, sheet, format_func, txterr, site, data, replaced_values):
+    replaced = False
     try:
         valueformat = format_func(value)
         float(valueformat.replace(',', '.'))
@@ -7,7 +8,9 @@ def check_and_return_value(value, sheet, format_func, txterr, site, data):
         last_row = sheet.max_row
         value = sheet.cell(row=last_row, column=2).value
         txterr = f"Valeur remplacé pour le site {site['name']} : {value}"
-    return value, txterr
+        replaced = True
+        replaced_values[site['name']] = value
+    return value, txterr, replaced, replaced_values
 
 
 def format_value_1AG1(value):

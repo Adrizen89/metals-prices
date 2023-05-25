@@ -12,6 +12,7 @@ import datetime
 from openpyxl import load_workbook, Workbook
 import sys
 import os
+import subprocess
 from io import StringIO
 from ressources.colors import bg_color, bg_color_light, bg_color, text_light, text_medium, text_dark
 import tkinter.messagebox as messagebox
@@ -26,10 +27,11 @@ date = now.strftime("%d/%m/%Y")
 class MyApp(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.geometry("900x600")
+        self.geometry("900x620")
         self.title("Cours des métaux")
         self.resizable(False, False)
         self.configure(bg="#0D1F26")
+
 
         # Création frame pour chemins d'accès
         left_frame = tk.Frame(self, bg=bg_color)
@@ -39,8 +41,13 @@ class MyApp(tk.Tk):
         driver_chrome_frame = tk.Frame(left_frame, bg=bg_color, width=50)
         name_pdf_frame = tk.Frame(left_frame, bg=bg_color, width=50)
 
-        self.output_text = tk.Text(right_frame, bg='white', state='disabled', width=50)
-        self.output_text.pack(side='top', fill='both', expand=True)
+        # Modification: Ajout d'un Scrollbar pour le widget Text
+        scrollbar = tk.Scrollbar(right_frame, orient="vertical")
+        self.output_text = tk.Text(right_frame, bg='white', state='disabled', width=50, yscrollcommand=scrollbar.set)
+        self.output_text.pack(side='left', fill='both', expand=True)
+        scrollbar.config(command=self.output_text.yview)
+        scrollbar.pack(side='right', fill='y')
+
 
         self.excel_path = get_config_value("main", "excel_path")
         self.pdf_path = get_config_value("main", "pdf_path")
@@ -59,6 +66,8 @@ class MyApp(tk.Tk):
         excel_label = tk.Label(excel_frame, text="Fichier Excel :", font=("Tahoma", 12, 'bold'), fg=text_medium, bg=bg_color)
         self.excel_label = tk.Label(excel_frame, textvariable=self.excel_path_var, fg=bg_color, bg=text_medium, width=50)
         excel_button = tk.Button(excel_frame, text="Parcourir...", command=self.choose_excelfile, width=10, height=1, bg=text_dark, fg=text_light)
+        open_excel_button = tk.Button(excel_frame, text="Ouvrir", command=self.open_excel, width=10, height=1, bg=text_dark, fg=text_light)
+
 
         driver_chrome_label = tk.Label(driver_chrome_frame, text="Fichier Driver Chrome :", font=("Tahoma", 12, 'bold'), fg=text_medium, bg=bg_color)
         self.driver_chrome_label = tk.Label(driver_chrome_frame, text=self.driver_chrome_path, fg=bg_color, bg=text_medium, width=50)
@@ -88,7 +97,9 @@ class MyApp(tk.Tk):
 
         excel_label.pack(side=tk.TOP, padx=10, pady=5)
         self.excel_label.pack(side=tk.TOP, padx=10, pady=2)
-        excel_button.pack(side=tk.BOTTOM, padx=10, pady=2)
+        excel_button.pack(side=tk.LEFT, padx=10, pady=2)
+        open_excel_button.pack(side=tk.RIGHT, padx=10, pady=10)
+
 
         driver_chrome_label.pack(side=tk.TOP, padx=10, pady=5)
         self.driver_chrome_label.pack(side=tk.TOP, padx=10, pady=2)
@@ -118,7 +129,14 @@ class MyApp(tk.Tk):
             self.excel_label.config(text=self.excel_path.name)
             set_config_value('main', 'excel_path', self.excel_path.name)
             self.save_config
-    
+
+    def open_excel(self):
+        try:
+            subprocess.run(["start", self.excel_path], shell=True, check=True)
+        except subprocess.CalledProcessError as e:
+            messagebox.showerror("Erreur", f"Impossible d'ouvrir le fichier Excel: {e}")
+
+
     def choose_driver_chrome(self):
         driver_chrome_path = filedialog.askopenfile()
         if driver_chrome_path:
@@ -134,13 +152,13 @@ class MyApp(tk.Tk):
             self.pdf_label.config(text=self.pdf_path)
             set_config_value('main', 'pdf_path', self.pdf_path)
             self.save_config
-    
+
     def make_entry_editable(self):
         self.name_pdf_label.config(state='normal')
 
     def saves_changes_name_pdf(self):
         new_text = self.name_pdf_label.get()
-        if new_text != config.get('main', 'name_pdf'):
+        if new_text != get_config_value('main', 'name_pdf'):
             set_config_value('main', 'name_pdf', new_text)
             self.name_pdf_label.config(state='readonly')
 
@@ -149,27 +167,27 @@ class MyApp(tk.Tk):
         # Vérification des changements dans la configuration
         changes = False
 
-        if self.excel_path != config.get('main', 'excel_path'):
-            config.set('main', 'excel_path', self.excel_path.name)
+        if self.excel_path != get_config_value('main', 'excel_path'):
+            set_config_value('main', 'excel_path', self.excel_path.name)
             changes = True
 
-        if self.driver_chrome_path != config.get('main', 'path_driver_chrome'):
-            config.set('main', 'path_driver_chrome', self.driver_chrome_path.name)
+        if self.driver_chrome_path != get_config_value('main', 'path_driver_chrome'):
+            set_config_value('main', 'path_driver_chrome', self.driver_chrome_path.name)
             changes = True
 
-        if self.pdf_path != config.get('main', 'pdf_path'):
-            config.set('main', 'pdf_path', self.pdf_path)
+        if self.pdf_path != get_config_value('main', 'pdf_path'):
+            set_config_value('main', 'pdf_path', self.pdf_path)
             changes = True
         
         new_text = self.name_pdf_label.get()
-        if new_text != config.get('main', 'name_pdf'):
-            config.set('main', 'name_pdf', new_text)
+        if new_text != get_config_value('main', 'name_pdf'):
+            set_config_value('main', 'name_pdf', new_text)
             changes = True
 
-        # Enregistrement des valeurs dans la configuration si des modifications ont été détectées
-        if changes:
-            with open("config.ini", "w") as configfile:
-                config.write(configfile)
+        # # Enregistrement des valeurs dans la configuration si des modifications ont été détectées
+        # if changes:
+        #     with open("config.ini", "w") as configfile:
+        #         config.write(configfile)
 
         # Fermeture de l'application
         self.destroy()
@@ -177,6 +195,21 @@ class MyApp(tk.Tk):
     def lancer_script(self, sites):
         old_stdout = sys.stdout
         sys.stdout = mystdout = StringIO()
+
+        replaced_values = {}
+        replaced_value_count = 0
+
+        config_excel_path = get_config_value("main", "excel_path")
+        config_pdf_path = get_config_value("main", "pdf_path")
+        config_driver_chrome_path = get_config_value("main", "path_driver_chrome")
+
+        # Vérifiez si l'une des valeurs a été modifiée
+        if (self.excel_path != config_excel_path or
+            self.pdf_path != config_pdf_path or
+            self.driver_chrome_path != config_driver_chrome_path):
+        
+            messagebox.showerror("Attention !", "Un ou plusieurs a été modifié. Veuillez redémarrer l'application.\n Merci !")
+            return
 
         if not self.driver_chrome_path:
             messagebox.showerror("Erreur", "Le chemin d'accès pour le driver Google Chrome est manquant. Veuillez le renseigner dans le fichier config.ini.")
@@ -194,6 +227,11 @@ class MyApp(tk.Tk):
             
         else:
             wb = load_workbook(self.excel_path)
+
+        rpa_sheet = wb['RPA'] if 'RPA' in wb.sheetnames else wb.create_sheet('RPA')
+        # Clear existing data in "RPA" sheet
+        if rpa_sheet.max_row > 1:
+            rpa_sheet.delete_rows(2, rpa_sheet.max_row-1)
 
         txterr = ""
         for site in sites:
@@ -216,8 +254,10 @@ class MyApp(tk.Tk):
                 data_extraction_function = getattr(scrapping, data_extraction_function_name)
                 sheet = wb[site["name"]]
                 data = data_extraction_function(soup)
-                data, txterr = check_and_return_value(data, sheet, site['format_func'], txterr, site, data)
+                data, txterr, replaced, replaced_values = check_and_return_value(data, sheet, site['format_func'], txterr, site, data, replaced_values)
 
+                if replaced:
+                    replaced_value_count += 1
 
                 row_number = sheet.max_row +1
                 sheet.cell(row = row_number, column = 1, value = date)
@@ -225,11 +265,17 @@ class MyApp(tk.Tk):
                 sheet.cell(row = row_number, column = 3, value = site['devise'])
                 sheet.cell(row = row_number, column = 4, value = site['unit'])
                 print (f"Valeur pour le site {site['name']} : {data}")
+                 # Write data to RPA sheet
+                rpa_row_number = rpa_sheet.max_row + 1
+                rpa_sheet.cell(row=rpa_row_number, column=1, value=site['name'])
+                rpa_sheet.cell(row=rpa_row_number, column=2, value=data)
+                rpa_sheet.cell(row=rpa_row_number, column=3, value=site['devise'])
+                rpa_sheet.cell(row=rpa_row_number, column=4, value=site['unit'])
 
                 self.update_output(txterr)
-
                 wb.save(self.excel_path)
             else:
                 print(f'Aucune fonction d\'extraction de données trouvées')
-            
-            
+        replaced_message = f"{replaced_value_count} valeurs remplacées : {', '.join(f'{k}: {v}' for k, v in replaced_values.items())}"
+        self.update_output("Script terminé.")
+        messagebox.showinfo("Information", f"Le script a terminé l'extraction des données et la mise à jour du fichier Excel.\n{replaced_message}")
