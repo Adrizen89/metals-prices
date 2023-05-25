@@ -210,32 +210,29 @@ def extract_1AG2(soup):
         browser.get(url)
         browser.maximize_window()
         time.sleep(5)
-            # table_path = "/html/body/div[1]/main/div[1]/div/div/div/div/div[2]/div/div[2]/div[4]/table"
+        table_path = "/html/body/div[1]/main/div[1]/div/div/div/div/div[2]/div/div[2]/div[4]/table"
 
-            # table = browser.find_elements(By.XPATH, "/html/body/div[1]/main/div[1]/div/div/div/div/div[2]/div/div[2]/div[4]/table")
-            # rows = browser.find_elements(By.XPATH, '/html/body/div[1]/main/div[1]/div/div/div/div/div[2]/div/div[2]/div[4]/table/tbody/tr[1]')
-            # drop = browser.find_elements(By.CLASS_NAME, 'dropdown-toggle')
-            # drop[0].click()
-            # a_drop = browser.find_elements(By.LINK_TEXT, 'Silver')
-            # a_drop[0].click()
-            # time.sleep(4)
+        table = browser.find_elements(By.XPATH, "/html/body/div[1]/main/div[1]/div/div/div/div/div[2]/div/div[2]/div[4]/table")
+        rows = browser.find_elements(By.XPATH, '/html/body/div[1]/main/div[1]/div/div/div/div/div[2]/div/div[2]/div[4]/table/tbody/tr[1]')
+        drop = browser.find_elements(By.CLASS_NAME, 'dropdown-toggle')
+        drop[0].click()
+        a_drop = browser.find_elements(By.LINK_TEXT, 'Silver')
+        a_drop[0].click()
+        time.sleep(4)
 
-        table = browser.find_element(By.CSS_SELECTOR, "div.pepper-responsive-table table")
-        first_row = table.find_element(By.CSS_SELECTOR, "tbody tr:first-child")
-        formatted_data = first_row.find_element(By.CSS_SELECTOR, "td:nth-child(3)").text
+        for row in rows:
+            cells = row.find_elements(By.XPATH, '/html/body/div[1]/main/div[1]/div/div/div/div/div[2]/div/div[2]/div[4]/table/tbody/tr[1]/td[2]')
+            for cell in (cells):
+                formatted_data = cell.text.replace('.', ',')
 
-        return formatted_data
-
-            # for row in rows:
-            #     cells = row.find_elements(By.XPATH, '/html/body/div[1]/main/div[1]/div/div/div/div/div[2]/div/div[2]/div[4]/table/tbody/tr[1]/td[2]')
-            #     for cell in (cells):
-            #         formatted_data = cell.text.replace('.', ',')
-
-    except Exception as e:
-        print (f"Erreur : {e}")
-        formatted_data = "err"
+    except NoSuchElementException:
+        print('Erreur : élément non trouvé')
+        formatted_data = None
+    except TimeoutException:
+        print('Erreur : délai d\'attente dépassé')
+        formatted_data = None
     finally:
-        browser.quit()
+        return formatted_data
 
 
 # Extraction données lbma pour 1AU2 (EL)
@@ -258,6 +255,7 @@ def extract_1AU2(soup):
             cells = row.find_elements(By.XPATH, '/html/body/div[1]/main/div[1]/div/div/div/div/div[2]/div/div[2]/div[4]/table/tbody/tr[1]/td[3]')
             for cell in (cells):
                 formatted_data = cell.text.replace('.', ',')
+                
     except NoSuchElementException:
         print("Erreur : élément non trouvé")
         formatted_data = None
