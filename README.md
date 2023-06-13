@@ -7,12 +7,12 @@ Cette application a pour but de récupérer différents cours de métaux sur dif
 
 ## Installation
 ```
- git clone https://example.com
- cd ../path/to/the/file
+ $git clone https://example.com
+ $cd ../path/to/the/file
  Créer un fichier ".env" avec les variables suivantes :
-    DOWNLOAD_PATH = path/for/download/pdf
-    EXCEL_PATH = path/for/download/excel
-
+    $DOWNLOAD_PATH = path/for/download/pdf
+    $EXCEL_PATH = path/for/download/excel
+```
 ## Tableau pour Tarifs Clients
 
 | Métal | Devise | Unité | Code SAP | Description | Lien |
