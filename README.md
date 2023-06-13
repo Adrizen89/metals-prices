@@ -25,6 +25,10 @@ $ Créer un fichier ".env" avec les variables suivantes :
 | CU | € | 100 KG | 3CU3 | Wieland Kopper | [Lien](https://www.westmetall.com/en/markdaten.php?action=table&field=WI_Cu) |
 
 
+| Test | Test | Test |
+|:----:|:----:|:----:|
+| OK | OK | OK |
+
 ## Tableau Fournisseurs pour les Achats
 
 | Métal | Devise | Unité | Code SAP | Description | Lien |
