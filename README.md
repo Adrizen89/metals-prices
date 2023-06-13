@@ -1,3 +1,6 @@
+ | Hello | World |
+ |---|---|
+ | How | are you? |
 # Application Metals-Prices
 
 Cette application a pour but de récupérer différents cours de métaux sur différents sites, les regrouper sur un fichier Excel et le déposer dans un dossier spécifique.
@@ -25,9 +28,7 @@ $ Créer un fichier ".env" avec les variables suivantes :
 | CU | € | 100 KG | 3CU3 | Wieland Kopper | [Lien](https://www.westmetall.com/en/markdaten.php?action=table&field=WI_Cu) |
 
 
- | Hello | World |
- |---|---|
- | How | are you? |
+
 
 ## Tableau Fournisseurs pour les Achats
 
