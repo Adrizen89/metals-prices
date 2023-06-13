@@ -13,7 +13,7 @@ $ Créer un fichier ".env" avec les variables suivantes :
 ## Tableau pour Tarifs Clients
 
 | Métal | Devise | Unité | Code SAP | Description | Lien |
-|:--------------|:-------------:|--------------:|--------------:|--------------:|--------------:|
+|:--------------|:-------------:|--------------:|--------------:|--------------:|--------------------------------------------------------------------------------------------------:|
 | AG | € | X OZ | 1AG1 | Ag c3E | https://www.cookson-clal.com/cours/cours.jsp?table=fins&datearch= |
 | AG | € | KG | 1AG3 | Ag Westmetall (Finesliber) | https://www.westmetall.com/en/markdaten.php?action=table&field=Ag |
 | AG | $ | OZ | 1AG2 | Ag LBMA | https://www.lbma.org.uk/prices-and-data/precious-metal-prices#/table |
