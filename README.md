@@ -26,7 +26,7 @@ $ Créer un fichier ".env" avec les variables suivantes :
 
 
 | Test | Test | Test |
-|:----:|:----:|:----:|
+|----|----|----|
 | OK | OK | OK |
 
 ## Tableau Fournisseurs pour les Achats
