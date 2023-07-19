@@ -1,8 +1,11 @@
+import re
 def check_and_return_value(value, sheet, format_func, txterr, site, data, replaced_values):
     replaced = False
     try:
         valueformat = format_func(value)
-        float(valueformat.replace(',', '.'))
+        if 'value' in valueformat:
+            raise ValueError
+        # float(valueformat.replace('.', ','))
         txterr = f"Valeur pour le site {site['name']} : {data}"
     except ValueError:
         last_row = sheet.max_row
@@ -17,7 +20,7 @@ def format_value_1AG1(value):
     return value.replace('.', ',')
 
 def format_value_1AU3(value):
-    return value.replace('.', ',').replace('€', '')
+    return value.replace('€', '').replace(',', '.')
 
 def format_value_1AG3(value):
     return value.replace('.', ',')
@@ -54,3 +57,6 @@ def format_value_2M30(value):
 
 def format_value_2B16(value):
     return value.replace('.', '').replace('.', ',')
+
+def format_value_3ZN1(value):
+    return value.replace('.', '').replace('.', '')
