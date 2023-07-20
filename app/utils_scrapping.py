@@ -20,19 +20,18 @@ config.read('config.ini')
 # Extraction données Cookson pour 1AG1 (EL)
 def extract_1AG1(soup):
     """Extraire les données de la table Cookson et les ajouter au classeur Excel"""
-    table = soup.find("table", {"class": "main"})
+    table = soup.find("table")
     rows = soup.find_all("tr")
     second_row = rows[3]
 
     # Trouver la quatrième colonne de la table dans la deuxième ligne
     columns = second_row.find_all("td")
-    fourth_column = columns[4]
+    last_column = columns[3]
 
     # Extraire le texte de la quatrième colonne
-    data = fourth_column.text.strip()
-    formatted_data = data.replace('.', ',')
+    data = last_column.text.strip()
+    formatted_data = data.replace('€', '')
     return formatted_data
-    print(formated_data)
 
 # Extraction données Cookson pour 1AU3 (EL)
 def extract_1AU3(soup):
@@ -47,7 +46,7 @@ def extract_1AU3(soup):
 
     # Extraire le texte de la quatrième colonne
     data = last_column.text.strip()
-    formatted_data = data
+    formatted_data = data.replace('€', '')
     return formatted_data
 
 # Extraction données pour 1AG3 (EL)

@@ -2,10 +2,9 @@ import re
 def check_and_return_value(value, sheet, format_func, txterr, site, data, replaced_values):
     replaced = False
     try:
-        valueformat = format_func(value)
-        if 'value' in valueformat:
-            raise ValueError
-        # float(valueformat.replace('.', ','))
+        valueformat = float(value.replace(',', '.'))
+        # valueformat = value.replace('.', ',')
+        # float(valueformat.replace(',', '.'))
         txterr = f"Valeur pour le site {site['name']} : {data}"
     except ValueError:
         last_row = sheet.max_row

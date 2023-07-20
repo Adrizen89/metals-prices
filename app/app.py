@@ -257,7 +257,8 @@ class MyApp(tk.Tk):
                 data, txterr, replaced, replaced_values = check_and_return_value(data, sheet, site['format_func'], txterr, site, data, replaced_values)
 
                 if replaced:
-                    replaced_value_count += 1
+                     replaced_value_count += 1
+
 
                 row_number = sheet.max_row +1
                 sheet.cell(row = row_number, column = 1, value = date)
