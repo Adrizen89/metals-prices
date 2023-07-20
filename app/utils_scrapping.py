@@ -20,24 +20,23 @@ config.read('config.ini')
 # Extraction données Cookson pour 1AG1 (EL)
 def extract_1AG1(soup):
     """Extraire les données de la table Cookson et les ajouter au classeur Excel"""
-    table = soup.find("table", {"class": "main"})
+    table = soup.find("table")
     rows = soup.find_all("tr")
     second_row = rows[3]
 
     # Trouver la quatrième colonne de la table dans la deuxième ligne
     columns = second_row.find_all("td")
-    fourth_column = columns[4]
+    last_column = columns[3]
 
     # Extraire le texte de la quatrième colonne
-    data = fourth_column.text.strip()
-    formatted_data = data.replace('.', ',')
+    data = last_column.text.strip()
+    formatted_data = data.replace('€', '')
     return formatted_data
-    print(formated_data)
 
 # Extraction données Cookson pour 1AU3 (EL)
 def extract_1AU3(soup):
     """Extraire les données de la table Cookson et les ajouter au classeur Excel"""
-    table = soup.find("table", {"class": "main"})
+    table = soup.find("table")
     rows = soup.find_all("tr")
     second_row = rows[2]
 
@@ -47,7 +46,7 @@ def extract_1AU3(soup):
 
     # Extraire le texte de la quatrième colonne
     data = last_column.text.strip()
-    formatted_data = data.replace('.', ',').replace('€', '')
+    formatted_data = data.replace('€', '')
     return formatted_data
 
 # Extraction données pour 1AG3 (EL)
@@ -198,6 +197,46 @@ def extract_2CUB(soup):
         formatted_data = 'err'
         return formatted_data
 
+def extract_2360(soup):
+    """Extraire les données de la table Materion et les ajouter au classeur Excel"""
+
+    pdf_path = get_config_value('main', 'pdf_path')
+    name_pdf = get_config_value('main', 'name_pdf')
+
+    if not pdf_path:
+        pdf_path = os.getcwd()
+
+    path = f"{pdf_path}/{name_pdf}"
+    try:
+        with open(path, 'rb') as pdf_materion:
+            reader_materion = PdfReader(pdf_materion)
+            page_materion = reader_materion.pages[0]
+            text_materion = page_materion.extract_text()
+            print('PDF lu')
+
+            lines = text_materion.split('\n')
+
+            alloy_line = None
+            for line in lines:
+                if line.startswith('Alloy 360'):
+                    alloy_line = line
+                    break
+
+            if alloy_line is not None:
+                # Récupérer la valeur de la 4ème colonne
+                columns = alloy_line.split()
+                if len(columns) >= 4:
+                    price_eur = columns[4]
+                else:
+                    price_eur = None
+
+                formatted_data = price_eur.replace('.', ',')
+                return formatted_data
+    except FileNotFoundError:
+        print(f"Le fichier PDF '{name_pdf}' n'a pas été trouvé. Passage à autre chose.")
+        formatted_data = 'err'
+        return formatted_data
+
 # Extraction données lbma pour 1AG2 (EL)
 def extract_1AG2(soup):
     formatted_data = "Init"
@@ -240,7 +279,8 @@ def extract_1AU2(soup):
 
     formatted_data = "init"
     try:
-        s=Service('C:/Users/adrie/OneDrive/Documents/chromedriver.exe')
+        path_driver_chrome = get_config_value('main', 'path_driver_chrome')
+        s=Service(path_driver_chrome)
         browser = webdriver.Chrome(service=s)
         url='https://www.lbma.org.uk/prices-and-data/precious-metal-prices#/table'
         browser.get(url)
@@ -270,10 +310,10 @@ def extract_1AU2(soup):
 
 # Extraction données 2M30
 def extract_2M30(soup):
-    table = soup.find('table', class_='metalinfo-table table-currency')
+    table = soup.find('table', class_='metalinfo-table table-metal-prices')
 
     rows = soup.find_all('tr')
-    second_row = rows[22]
+    second_row = rows[23]
 
     columns = second_row.find_all('td')
     fourth_column = columns[1]
@@ -284,13 +324,32 @@ def extract_2M30(soup):
 
 # Extraction données 2B16
 def extract_2B16(soup):
-    table = soup.find('table', class_='metalinfo-table table-currency')
+    """Extraire les données de la table Cookson et les ajouter au classeur Excel"""
+    table = soup.find("table")
+    rows = soup.find_all("tr")
+    second_row = rows[26]
 
-    rows = soup.find_all('tr')
-    second_row = rows[14]
-
-    columns = second_row.find_all('td')
+    # Trouver la quatrième colonne de la table dans la deuxième ligne
+    columns = second_row.find_all("td")
     fourth_column = columns[1]
+
+    # Extraire le texte de la quatrième colonne
+    data = fourth_column.text.strip()
+    formatted_data = data.replace(',', '').replace('.', ',')
+    return formatted_data
+
+# Extraction données 3ZN1
+def extract_3ZN1(soup):
+    """Extraire les données de la table Cookson et les ajouter au classeur Excel"""
+    table = soup.find("table")
+    rows = soup.find_all("tr")
+    second_row = rows[1]
+
+    # Trouver la quatrième colonne de la table dans la deuxième ligne
+    columns = second_row.find_all("td")
+    fourth_column = columns[1]
+
+    # Extraire le texte de la quatrième colonne
     data = fourth_column.text.strip()
     formatted_data = data.replace(',', '').replace('.', ',')
     return formatted_data

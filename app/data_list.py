@@ -15,4 +15,8 @@ sites = [
 {"src": "site","name" : "3SN1" , "url" : "https://www.kme.com/fr/services/cours-des-metaux", "func": "extract_3SN1", "unit" : "TO", "devise": "$", "format_func" : func.format_value_3SN1},
 {"src": "ext" ,"name" : "1AG2" , "url" : "https://www.lbma.org.uk/prices-and-data/precious-metal-prices#", "func": "extract_1AG2", "unit": "OZ", "devise": "$", "format_func" : func.format_value_1AG2},
 {"src": "ext" ,"name" : "1AU2" , "url" : "https://www.lbma.org.uk/prices-and-data/precious-metal-prices#", "func": "extract_1AU2", "unit": "OZ", "devise": "$", "format_func" : func.format_value_1AU2},
+{"src": "site" ,"name" : "2B16" , "url" : "https://www.westmetall.com/en/markdaten.php?action=average&field=LME_AI_cash", "func": "extract_2B16", "unit": "100KG", "devise": "€", "format_func" : func.format_value_2B16},
+{"src": "site" ,"name" : "2M30" , "url" : "https://www.wieland.com/en/resources/metal-information#metal-information", "func": "extract_2M30", "unit": "100KG", "devise": "€", "format_func" : func.format_value_2M30},
+{"src": "ext" ,"name" : "3ZN1" , "url" : "https://www.westmetall.com/en/markdaten.php?action=table&field=LME_Zn_cash", "func": "extract_3ZN1", "unit": "TO", "devise": "$", "format_func" : func.format_value_3ZN1},
+{"src": "ext" ,"name" : "2360" , "url" : "https://www.westmetall.com/en/markdaten.php?action=table&field=LME_Zn_cash", "func": "extract_2360", "unit": "KG", "devise": "€", "format_func" : func.format_value_2360},
 ]
