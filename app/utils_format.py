@@ -1,15 +1,16 @@
 import re
 def check_and_return_value(value, sheet, format_func, txterr, site, data, replaced_values):
     replaced = False
+    valueformat = value.replace(',', '.')
     try:
-        valueformat = float(value.replace(',', '.'))
+        valueformat = valueformat
         # valueformat = value.replace('.', ',')
         # float(valueformat.replace(',', '.'))
         txterr = f"Valeur pour le site {site['name']} : {data}"
     except ValueError:
         last_row = sheet.max_row
         value = sheet.cell(row=last_row, column=2).value
-        txterr = f"Valeur remplacé pour le site {site['name']} : {value}"
+        txterr = f"Remplacement pour {site['name']} : {value} , {valueformat}"
         replaced = True
         replaced_values[site['name']] = value
     return value, txterr, replaced, replaced_values
@@ -19,7 +20,7 @@ def format_value_1AG1(value):
     return value.replace('.', ',')
 
 def format_value_1AU3(value):
-    return value.replace('€', '').replace(',', '.')
+    return value.replace('€', '')
 
 def format_value_1AG3(value):
     return value.replace('.', ',')

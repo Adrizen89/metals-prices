@@ -42,12 +42,13 @@ def extract_1AU3(soup):
 
     # Trouver la quatrième colonne de la table dans la deuxième ligne
     columns = second_row.find_all("td")
-    last_column = columns[4]
+    last_column = columns[3]
 
     # Extraire le texte de la quatrième colonne
     data = last_column.text.strip()
-    formatted_data = data.replace('€', '')
+    formatted_data = data.replace('.', ',').replace('€', '')
     return formatted_data
+
 
 # Extraction données pour 1AG3 (EL)
 def extract_1AG3(soup):
