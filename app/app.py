@@ -268,10 +268,11 @@ class MyApp(tk.Tk):
                 print (f"Valeur pour le site {site['name']} : {data}")
                  # Write data to RPA sheet
                 rpa_row_number = rpa_sheet.max_row + 1
-                rpa_sheet.cell(row=rpa_row_number, column=1, value=site['name'])
-                rpa_sheet.cell(row=rpa_row_number, column=2, value=data)
-                rpa_sheet.cell(row=rpa_row_number, column=3, value=site['devise'])
-                rpa_sheet.cell(row=rpa_row_number, column=4, value=site['unit'])
+                rpa_sheet.cell(row=rpa_row_number, column=1, value=site['metal'])
+                rpa_sheet.cell(row=rpa_row_number, column=2, value=site['name'])
+                rpa_sheet.cell(row=rpa_row_number, column=3, value=data)
+                rpa_sheet.cell(row=rpa_row_number, column=4, value=site['devise'])
+                rpa_sheet.cell(row=rpa_row_number, column=5, value=site['unit'])
 
                 self.update_output(txterr)
                 wb.save(self.excel_path)
