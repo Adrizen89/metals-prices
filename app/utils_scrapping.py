@@ -46,7 +46,7 @@ def extract_1AU3(soup):
 
     # Extraire le texte de la quatrième colonne
     data = last_column.text.strip()
-    formatted_data = data.replace('.', ',').replace('€', '')
+    formatted_data = data.replace('.', ',').replace('€', '').replace(' ','')
     return formatted_data
 
 
@@ -240,7 +240,7 @@ def extract_2360(soup):
 
 # Extraction données lbma pour 1AG2 (EL)
 def extract_1AG2(soup):
-    formatted_data = "Init"
+    formatted_data = "init"
     
     path_driver_chrome = get_config_value('main', 'path_driver_chrome')
     s=Service(path_driver_chrome)
