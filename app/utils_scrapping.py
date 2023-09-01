@@ -1,17 +1,11 @@
-
 import configparser
 from PyPDF2 import PdfReader
 import time
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.ui import WebDriverWait
-from webdriver_manager.chrome import ChromeDriverManager
 from app.data_list import sites
 import os
-from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from .config import get_config_value, get_pdf_path, set_config_value
+import json
+from urllib.request import urlopen
 
 config = configparser.ConfigParser()
 config.read('config.ini')
@@ -240,74 +234,31 @@ def extract_2360(soup):
 
 # Extraction données lbma pour 1AG2 (EL)
 def extract_1AG2(soup):
-    formatted_data = "init"
+    url = "https://prices.lbma.org.uk/json/silver.json?r=211497526"
+    response = urlopen(url).read()
+    data = json.loads(response)
+    latest_prices = data[-1]
+    first_value = latest_prices['v'].pop(0)
+    data = str(first_value)
+    formatted_data = data.replace('.', ',')
     
-    path_driver_chrome = get_config_value('main', 'path_driver_chrome')
-    s=Service(path_driver_chrome)
-    browser = webdriver.Chrome(service=s)
-    url= 'https://www.lbma.org.uk/prices-and-data/precious-metal-prices#/table'
-    try:
-        browser.get(url)
-        browser.maximize_window()
-        time.sleep(5)
-        table_path = "/html/body/div[1]/main/div[1]/div/div/div/div/div[2]/div/div[2]/div[4]/table"
-
-        table = browser.find_elements(By.XPATH, "/html/body/div[1]/main/div[1]/div/div/div/div/div[2]/div/div[2]/div[4]/table")
-        rows = browser.find_elements(By.XPATH, '/html/body/div[1]/main/div[1]/div/div/div/div/div[2]/div/div[2]/div[4]/table/tbody/tr[1]')
-        drop = browser.find_elements(By.CLASS_NAME, 'dropdown-toggle')
-        drop[0].click()
-        a_drop = browser.find_elements(By.LINK_TEXT, 'Silver')
-        a_drop[0].click()
-        time.sleep(4)
-
-        for row in rows:
-            cells = row.find_elements(By.XPATH, '/html/body/div[1]/main/div[1]/div/div/div/div/div[2]/div/div[2]/div[4]/table/tbody/tr[1]/td[2]')
-            for cell in (cells):
-                formatted_data = cell.text.replace('.', ',')
-
-    except NoSuchElementException:
-        print('Erreur : élément non trouvé')
-        formatted_data = None
-    except TimeoutException:
-        print('Erreur : délai d\'attente dépassé')
-        formatted_data = None
-    finally:
-        return formatted_data
+    print(formatted_data)
+    return formatted_data
 
 
 # Extraction données lbma pour 1AU2 (EL)
 def extract_1AU2(soup):
 
-    formatted_data = "init"
-    try:
-        path_driver_chrome = get_config_value('main', 'path_driver_chrome')
-        s=Service(path_driver_chrome)
-        browser = webdriver.Chrome(service=s)
-        url='https://www.lbma.org.uk/prices-and-data/precious-metal-prices#/table'
-        browser.get(url)
-        browser.maximize_window()
-        time.sleep(5)
-        table_path = "/html/body/div[1]/main/div[1]/div/div/div/div/div[2]/div/div[2]/div[4]/table"
-
-        table = browser.find_elements(By.XPATH, "/html/body/div[1]/main/div[1]/div/div/div/div/div[2]/div/div[2]/div[4]/table")
-        rows = browser.find_elements(By.XPATH, '/html/body/div[1]/main/div[1]/div/div/div/div/div[2]/div/div[2]/div[4]/table/tbody/tr[1]')
-
-        for row in rows:
-            cells = row.find_elements(By.XPATH, '/html/body/div[1]/main/div[1]/div/div/div/div/div[2]/div/div[2]/div[4]/table/tbody/tr[1]/td[3]')
-            for cell in (cells):
-                formatted_data = cell.text.replace('.', ',')
-                
-    except NoSuchElementException:
-        print("Erreur : élément non trouvé")
-        formatted_data = None
-    except TimeoutException:
-        print("Erreur : délai d'attente dépassé")
-        formatted_data = None
-
-
-    finally:
-        print(formatted_data)
-        return formatted_data
+    url = "https://prices.lbma.org.uk/json/gold_pm.json?r=666323974"
+    response = urlopen(url).read()
+    data = json.loads(response)
+    latest_prices = data[-1]
+    first_value = latest_prices['v'].pop(0)
+    data = str(first_value)
+    formatted_data = data.replace('.', ',')
+    
+    print(formatted_data)
+    return formatted_data
 
 # Extraction données 2M30
 def extract_2M30(soup):

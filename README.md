@@ -36,11 +36,9 @@ Cette application a pour but de récupérer différents cours de métaux sur dif
 | STOL78 | € | KG | 2CUB | Alloy 25 | materion |
 | Ni | $ | TO | 3NI1 |  | [KME](https://www.kme.com/fr/services/cours-des-metaux) |
 | Sn | $ | TO | 3SN1 |  | [KME](https://www.kme.com/fr/services/cours-des-metaux) |
-|  |  |  |  |  |  |
-|  |  |  |  |  |  |
-|  |  |  |  |  |  |
-|  |  |  |  |  |  |
-|  |  |  |  |  |  |
-|  |  |  |  |  |  |
+| B16 | € | 100KG | 2B16 |  |  |
+| M30 | € | 100KG | 2M30 |  |  |
+| ZN | $ | TO | 3ZN1 |  |  |
+| 360 | € | KG | 2360 |  |  |
 
 DAD - Adrien BERARD

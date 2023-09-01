@@ -38,7 +38,6 @@ class MyApp(tk.Tk):
         right_frame = tk.Frame(self, bg=text_light)
         excel_frame = tk.Frame(left_frame, bg=bg_color, width=50)
         pdf_frame = tk.Frame(left_frame, bg=bg_color, width=50)
-        driver_chrome_frame = tk.Frame(left_frame, bg=bg_color, width=50)
         name_pdf_frame = tk.Frame(left_frame, bg=bg_color, width=50)
 
         # Modification: Ajout d'un Scrollbar pour le widget Text
@@ -51,7 +50,6 @@ class MyApp(tk.Tk):
 
         self.excel_path = get_config_value("main", "excel_path")
         self.pdf_path = get_config_value("main", "pdf_path")
-        self.driver_chrome_path = get_config_value("main", "path_driver_chrome")
         self.name_pdf_path = get_config_value("main", "name_pdf")
 
         self.excel_path_var = tk.StringVar()
@@ -67,11 +65,6 @@ class MyApp(tk.Tk):
         self.excel_label = tk.Label(excel_frame, textvariable=self.excel_path_var, fg=bg_color, bg=text_medium, width=50)
         excel_button = tk.Button(excel_frame, text="Parcourir...", command=self.choose_excelfile, width=10, height=1, bg=text_dark, fg=text_light)
         open_excel_button = tk.Button(excel_frame, text="Ouvrir", command=self.open_excel, width=10, height=1, bg=text_dark, fg=text_light)
-
-
-        driver_chrome_label = tk.Label(driver_chrome_frame, text="Fichier Driver Chrome :", font=("Tahoma", 12, 'bold'), fg=text_medium, bg=bg_color)
-        self.driver_chrome_label = tk.Label(driver_chrome_frame, text=self.driver_chrome_path, fg=bg_color, bg=text_medium, width=50)
-        driver_chrome_button = tk.Button(driver_chrome_frame, text="Parcourir...", command=self.choose_driver_chrome, width=10, height=1, bg=text_dark, fg=text_light)
 
         pdf_label = tk.Label(pdf_frame, text="Fichier PDF :", font=("Tahoma", 12, 'bold'), fg=text_medium, bg=bg_color)
         self.pdf_label = tk.Label(pdf_frame, text=self.pdf_path, fg=bg_color, bg=text_medium, width=50)
@@ -91,7 +84,6 @@ class MyApp(tk.Tk):
         right_frame.pack(side=tk.RIGHT, padx=10, pady=10)
         excel_frame.pack(side=tk.TOP, padx=10, pady=10)
         pdf_frame.pack(side=tk.TOP, padx=10, pady=10)
-        driver_chrome_frame.pack(side=tk.TOP, padx=10, pady=10)
         name_pdf_frame.pack(side=tk.TOP, padx=10, pady=10)
         left_frame.pack(side=tk.LEFT, padx=10, pady=10)
 
@@ -100,10 +92,6 @@ class MyApp(tk.Tk):
         excel_button.pack(side=tk.LEFT, padx=10, pady=2)
         open_excel_button.pack(side=tk.RIGHT, padx=10, pady=10)
 
-
-        driver_chrome_label.pack(side=tk.TOP, padx=10, pady=5)
-        self.driver_chrome_label.pack(side=tk.TOP, padx=10, pady=2)
-        driver_chrome_button.pack(side=tk.BOTTOM, padx=10, pady=2)
 
         pdf_label.pack(side=tk.TOP, padx=10, pady=5)
         self.pdf_label.pack(side=tk.TOP, padx=10, pady=2)
@@ -137,14 +125,6 @@ class MyApp(tk.Tk):
             messagebox.showerror("Erreur", f"Impossible d'ouvrir le fichier Excel: {e}")
 
 
-    def choose_driver_chrome(self):
-        driver_chrome_path = filedialog.askopenfile()
-        if driver_chrome_path:
-            self.driver_chrome_path = driver_chrome_path
-            self.driver_chrome_label.config(text=self.driver_chrome_path.name)
-            set_config_value('main', 'path_driver_chrome', self.driver_chrome_path.name)
-            self.save_config
-
     def choose_pdffile(self):
         pdf_path = filedialog.askdirectory()
         if pdf_path:
@@ -169,10 +149,6 @@ class MyApp(tk.Tk):
 
         if self.excel_path != get_config_value('main', 'excel_path'):
             set_config_value('main', 'excel_path', self.excel_path.name)
-            changes = True
-
-        if self.driver_chrome_path != get_config_value('main', 'path_driver_chrome'):
-            set_config_value('main', 'path_driver_chrome', self.driver_chrome_path.name)
             changes = True
 
         if self.pdf_path != get_config_value('main', 'pdf_path'):
@@ -201,19 +177,14 @@ class MyApp(tk.Tk):
 
         config_excel_path = get_config_value("main", "excel_path")
         config_pdf_path = get_config_value("main", "pdf_path")
-        config_driver_chrome_path = get_config_value("main", "path_driver_chrome")
 
         # Vérifiez si l'une des valeurs a été modifiée
         if (self.excel_path != config_excel_path or
-            self.pdf_path != config_pdf_path or
-            self.driver_chrome_path != config_driver_chrome_path):
+            self.pdf_path != config_pdf_path):
         
             messagebox.showerror("Attention !", "Un ou plusieurs a été modifié. Veuillez redémarrer l'application.\n Merci !")
             return
 
-        if not self.driver_chrome_path:
-            messagebox.showerror("Erreur", "Le chemin d'accès pour le driver Google Chrome est manquant. Veuillez le renseigner dans le fichier config.ini.")
-            return
         if not self.excel_path or not os.path.exists(self.excel_path):
             self.excel_path = os.path.join(os.getcwd(), "metals_prices.xlsx")
             wb = Workbook()
