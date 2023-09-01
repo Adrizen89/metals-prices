@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import filedialog
+from tkinter import filedialog, messagebox
 import configparser
 from bs4 import BeautifulSoup
 import requests
@@ -17,12 +17,25 @@ from io import StringIO
 from ressources.colors import bg_color, bg_color_light, bg_color, text_light, text_medium, text_dark
 import tkinter.messagebox as messagebox
 from app.utils_format import check_and_return_value
+import threading
 
 config = configparser.ConfigParser()
 config.read('config.ini')
 
 now = datetime.datetime.now().date()
 date = now.strftime("%d/%m/%Y")
+
+# Ajout de la fenêtre de chargement
+class LoadingWindow(tk.Toplevel):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.title("Chargement...")
+        self.geometry("300x100")
+        self.label = tk.Label(self, text="Le script s'exécute, veuillez patienter...")
+        self.label.pack(pady=30)
+
+    def close(self):
+        self.destroy()
 
 class MyApp(tk.Tk):
     def __init__(self):
@@ -104,6 +117,22 @@ class MyApp(tk.Tk):
 
         # sauvegarde automatique du chemin d'accès lors de la fermeture de l'application
         self.protocol("WM_DELETE_WINDOW", self.save_config)
+
+        # Lancement automatique de lancer_script à l'initialisation
+        self.loading_window = LoadingWindow(self)
+        self.thread = threading.Thread(target=self.start_lancer_script)
+        self.thread.start()
+        self.after(100, self.check_script_status)
+        
+    def start_lancer_script(self):
+        self.lancer_script(sites=sites) # Remplacez "sites=sites" si "sites" est défini ailleurs
+        self.loading_window.close()
+
+    def check_script_status(self):
+        if self.thread.is_alive():
+            self.after(100, self.check_script_status)
+        else:
+            self.loading_window.close()
 
     def update_output(self, text):
         self.output_text.configure(state="normal")
