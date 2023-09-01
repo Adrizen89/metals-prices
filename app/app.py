@@ -123,7 +123,12 @@ class MyApp(tk.Tk):
         self.thread = threading.Thread(target=self.start_lancer_script)
         self.thread.start()
         self.after(100, self.check_script_status)
+
+        self.after(180000, self.close_app)
         
+    def close_app(self):
+        self.destroy()
+
     def start_lancer_script(self):
         self.lancer_script(sites=sites) # Remplacez "sites=sites" si "sites" est défini ailleurs
         self.loading_window.close()
