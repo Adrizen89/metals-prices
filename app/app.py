@@ -18,6 +18,7 @@ from ressources.colors import bg_color, bg_color_light, bg_color, text_light, te
 import tkinter.messagebox as messagebox
 from app.utils_format import check_and_return_value
 import threading
+import ssl
 
 config = configparser.ConfigParser()
 config.read('config.ini')
@@ -241,7 +242,7 @@ class MyApp(tk.Tk):
         txterr = ""
         for site in sites:
             try:
-                response = requests.get(site['url'])
+                response = requests.get(site['url'], verify=False )
                 response.raise_for_status()
             except RequestException as e:
                 txterr = f"Erreur de connexion pour le site de {site['name']} : {e}"
