@@ -42,7 +42,7 @@ def format_value_1AG1(value):
     return value.replace('.', ',')
 
 def format_value_1AU3(value):
-    return value.replace('€', '')
+    return value.replace('€', '').replace(" ", "")
 
 def format_value_1AG3(value):
     return value.replace('.', ',')
@@ -75,7 +75,7 @@ def format_value_1AG2(value):
     return value.replace('.', ',')
 
 def format_value_1AU2(value):
-    return value.replace('.', ',')
+    return value.replace('.', ',').replace(" ", '')
 
 def format_value_2M30(value):
     return value.replace('.', '').replace('.', ',')

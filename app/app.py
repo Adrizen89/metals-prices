@@ -9,6 +9,7 @@ from .data_list import sites as sites
 import app.utils_scrapping as scrapping
 from .utils_pdf import download_pdf, delete_pdfs
 import datetime
+from datetime import timedelta
 from openpyxl import load_workbook, Workbook
 import sys
 import os
@@ -24,7 +25,8 @@ config = configparser.ConfigParser()
 config.read('config.ini')
 
 now = datetime.datetime.now().date()
-date = now.strftime("%d/%m/%Y")
+yesterday = now - timedelta(days=1)
+date = yesterday.strftime("%d/%m/%Y")
 
 # Ajout de la fenêtre de chargement
 class LoadingWindow(tk.Toplevel):
@@ -259,7 +261,7 @@ class MyApp(tk.Tk):
 
                 data_extraction_function = getattr(scrapping, data_extraction_function_name)
                 sheet = wb[site["name"]]
-                data = data_extraction_function(soup)
+                date_day, data, *_ = data_extraction_function(soup)
                 data, txterr, replaced, replaced_values = check_and_return_value(data, sheet, site['format_func'], txterr, site, data, replaced_values)
 
                 if replaced:
@@ -267,7 +269,7 @@ class MyApp(tk.Tk):
 
 
                 row_number = sheet.max_row +1
-                sheet.cell(row = row_number, column = 1, value = date)
+                sheet.cell(row = row_number, column = 1, value = date_day)
                 sheet.cell(row = row_number, column = 2, value = data)
                 sheet.cell(row = row_number, column = 3, value = site['devise'])
                 sheet.cell(row = row_number, column = 4, value = site['unit'])
