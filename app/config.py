@@ -12,15 +12,15 @@ def get_config_path():
         application_path = os.path.dirname(sys.executable)
     else:
         application_path = os.path.dirname(os.path.abspath(__file__))
-    config_path = os.path.join(application_path, 'config.ini')
+    config_path = os.path.join(application_path, '../config.ini')
     if not os.path.exists(config_path) and is_executable():
         # Si le fichier config.ini n'existe pas à côté de l'exécutable, recherchez-le dans le répertoire du script
-        config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.ini')
+        config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../config.ini')
     return os.path.abspath(config_path)
 
 def get_code_config_path():
     if not is_executable():
-        return os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.ini')
+        return os.path.join(os.path.dirname(os.path.abspath(__file__)), '../config.ini')
     return None
 
 
@@ -51,7 +51,7 @@ def set_config_value(section, variable, value):
 
 
 def get_pdf_path():
-    pdf_path = get_config_value("main", "pdf_path")
+    pdf_path = get_config_value("SETTINGS", "pdf_path")
     if not pdf_path:
         pdf_path = os.getcwd()
     return pdf_path

@@ -14,8 +14,8 @@ config.read('config.ini')
 def extract_2360(soup):
     """Extraire les données de la table Materion et les ajouter au classeur Excel"""
 
-    pdf_path = get_config_value('main', 'pdf_path')
-    name_pdf = get_config_value('main', 'name_pdf')
+    pdf_path = get_config_value('SETTINGS', 'pdf_path')
+    name_pdf = get_config_value('SETTINGS', 'name_pdf')
 
     if not pdf_path:
         pdf_path = os.getcwd()
@@ -278,8 +278,8 @@ def extract_3CU3(soup):
 def extract_2CUB(soup):
     """Extraire les données de la table Materion et les ajouter au classeur Excel"""
 
-    pdf_path = get_config_value('main', 'pdf_path')
-    name_pdf = get_config_value('main', 'name_pdf')
+    pdf_path = get_config_value('SETTINGS', 'pdf_path')
+    name_pdf = get_config_value('SETTINGS', 'name_pdf')
 
     if not pdf_path:
         pdf_path = os.getcwd()
