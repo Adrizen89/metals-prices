@@ -9,18 +9,24 @@ def is_executable():
 
 def get_config_path():
     if is_executable():
-        application_path = os.path.dirname(sys.executable)
+         application_path = os.path.dirname(sys.executable)
+         os.chdir(application_path)
     else:
-        application_path = os.path.dirname(os.path.abspath(__file__))
-    config_path = os.path.join(application_path, '../config.ini')
+         application_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
+    config_path = os.path.join(application_path,'config.ini')
+
     if not os.path.exists(config_path) and is_executable():
         # Si le fichier config.ini n'existe pas à côté de l'exécutable, recherchez-le dans le répertoire du script
-        config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../config.ini')
+        config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..','config.ini')
+    if not os.path.exists(config_path):
+        print(f"Erreur : Le fichier 'config.ini' est introuvable au chemin : {config_path}")
+        sys.exit(1)
+    
     return os.path.abspath(config_path)
 
 def get_code_config_path():
     if not is_executable():
-        return os.path.join(os.path.dirname(os.path.abspath(__file__)), '../config.ini')
+        return os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.ini')
     return None
 
 

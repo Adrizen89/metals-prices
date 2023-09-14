@@ -9,7 +9,7 @@ import json
 from urllib.request import urlopen
 
 config = configparser.ConfigParser()
-config.read('config.ini')
+config.read('../config.ini')
 
 def extract_2360(soup):
     """Extraire les données de la table Materion et les ajouter au classeur Excel"""

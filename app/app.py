@@ -10,6 +10,7 @@ import app.utils_scrapping as scrapping
 from .utils_pdf import download_pdf, delete_pdfs
 import datetime
 from datetime import timedelta
+from datetime import date
 from openpyxl import load_workbook, Workbook
 import sys
 import os
@@ -20,6 +21,8 @@ import tkinter.messagebox as messagebox
 from app.utils_format import check_and_return_value
 import threading
 import ssl
+import locale
+from dateutil.easter import easter
 
 from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QVBoxLayout, QWidget, QPushButton, QFileDialog, QTextEdit, QLineEdit
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
@@ -30,10 +33,76 @@ from PyQt5 import QtWidgets, QtCore
 
 config = configparser.ConfigParser()
 config.read('config.ini')
-
+locale.setlocale(locale.LC_ALL, 'fr_FR.UTF-8')
 now = datetime.datetime.now().date()
 yesterday = now - timedelta(days=1)
-date = yesterday.strftime("%d/%m/%Y")
+date_yesterday = yesterday.strftime("%d/%m/%Y")
+day_of_week = now.strftime("%A")
+yesterday_day_of_week = yesterday.strftime("%A")
+
+def get_uk_holidays(year):
+    # Jours fériés fixes
+    holidays_uk = [
+        date(year, 1, 1),   # Jour de l'an
+        date(year, 12, 25), # Noël
+        date(year, 12, 26), # Lendemain de Noël
+    ]
+    
+    # Premier lundi de mai
+    may_day = date(year, 5, 1)
+    while may_day.weekday() != 0:
+        may_day += timedelta(days=1)
+    holidays_uk.append(may_day)
+    
+    # Dernier lundi de mai
+    spring_bank_holiday = date(year, 5, 31)
+    while spring_bank_holiday.weekday() != 0:
+        spring_bank_holiday -= timedelta(days=1)
+    holidays_uk.append(spring_bank_holiday)
+    
+    # Dernier lundi d'août
+    summer_bank_holiday = date(year, 8, 31)
+    while summer_bank_holiday.weekday() != 0:
+        summer_bank_holiday -= timedelta(days=1)
+    holidays_uk.append(summer_bank_holiday)
+    
+    # Jours fériés variables basés sur Pâques
+    good_friday = easter(year) - timedelta(days=2)
+    holidays_uk.append(good_friday)
+    
+    easter_monday = easter(year) + timedelta(days=1)
+    holidays_uk.append(easter_monday)
+    
+    return holidays_uk
+
+
+def get_french_holidays(year):
+    # Jours fériés fixes
+    holidays_french = [
+        date(year, 1, 1),   # Jour de l'an
+        date(year, 5, 1),   # Fête du travail
+        date(year, 5, 8),   # Victoire des alliés
+        date(year, 7, 14),  # Fête nationale
+        date(year, 8, 15),  # Assomption
+        date(year, 11, 1),  # Toussaint
+        date(year, 11, 11), # Armistice
+        date(year, 12, 25), # Noël
+    ]
+    
+    # Jours fériés variables
+    lundi_paques = easter(year) + timedelta(days=1)
+    holidays_french.append(lundi_paques)
+    
+    ascension = easter(year) + timedelta(days=39)
+    holidays_french.append(ascension)
+    
+    pentecote = easter(year) + timedelta(days=50)
+    holidays_french.append(pentecote)
+
+    # vendredi_saint = easter(year) - timedelta(days=2)
+    # holidays_french.append(vendredi_saint)
+
+    return holidays_french
 
 # Lire le chemin du fichier à partir du fichier config.ini
 config = configparser.ConfigParser()
@@ -70,7 +139,7 @@ class MyApp(QtWidgets.QWidget):
         self.initUI()
 
         self.config = configparser.ConfigParser()
-        self.config.read('../config.ini')
+        self.config.read('config.ini')
         auto_start = self.config.getboolean('SETTINGS', 'auto_start', fallback=False)
         self.param1_checkbox.setChecked(auto_start)
 
@@ -89,7 +158,7 @@ class MyApp(QtWidgets.QWidget):
         layout.addWidget(self.label_excel_path)
 
         # Chemin d'accès excel
-        self.path_excel = QtWidgets.QLineEdit(default_path_excel)
+        self.path_excel = QtWidgets.QLineEdit(get_config_value("SETTINGS", "excel_path"))  
         self.path_excel.setReadOnly(True)
         layout.addWidget(self.path_excel)
 
@@ -108,7 +177,8 @@ class MyApp(QtWidgets.QWidget):
         layout.addWidget(self.label_pdf_path)
 
         # Chemin d'accès PDF
-        self.path_pdf = QtWidgets.QLineEdit(default_path_pdf)
+        path_pdf = get_config_value("SETTINGS", "pdf_path")
+        self.path_pdf = QtWidgets.QLineEdit(path_pdf)
         self.path_pdf.setReadOnly(True)
         layout.addWidget(self.path_pdf)
 
@@ -123,7 +193,8 @@ class MyApp(QtWidgets.QWidget):
         layout.addWidget(self.label_name_pdf_path)
 
         # Nom PDF
-        self.path_namepdf = QtWidgets.QLineEdit(default_path_pdf_name)
+        name_pdf = get_config_value("SETTINGS", "name_pdf")
+        self.path_namepdf = QtWidgets.QLineEdit(name_pdf)
         self.path_namepdf.setReadOnly(True)
         layout.addWidget(self.path_namepdf)
 
@@ -171,7 +242,7 @@ class MyApp(QtWidgets.QWidget):
     
     #############  FONCTIONS ###############
     def saveSettings(self):
-        self.config.read('../config.ini')
+        self.config.read('config.ini')
     
         # Mettez à jour seulement la clé spécifique
         if not self.config.has_section('SETTINGS'):
@@ -179,7 +250,7 @@ class MyApp(QtWidgets.QWidget):
         self.config.set('SETTINGS', 'auto_start', str(self.param1_checkbox.isChecked()))
         
         # Écrivez le fichier de configuration mis à jour
-        with open('../config.ini', 'w') as configfile:
+        with open('config.ini', 'w') as configfile:
             self.config.write(configfile)
 
     def modify_path_excel(self):
@@ -245,6 +316,17 @@ class MyApp(QtWidgets.QWidget):
 
         self.progressbar.setMaximum(len(sites))
         self.progressbar.setValue(0)
+        holidays_french = get_french_holidays(yesterday.year)
+        holidays_uk = get_uk_holidays(yesterday.year)
+        # Vérification du jour de la semaine pour hier
+        if yesterday_day_of_week in ["samedi", "dimanche"] or yesterday in holidays_french or yesterday in holidays_uk:
+            QMessageBox.information(self, "Jour fermé", "Hier était un jour fermé.")
+            return  # On arrête l'exécution de la fonction ici
+        else:
+            QMessageBox.information(self, "Jour ouvré", "Hier était un jour ouvré.")
+
+        self.log(day_of_week)
+        self.log(yesterday_day_of_week)
 
          # Création fichier excel s'il n'existe pas
         excel_path = default_path_excel
@@ -271,6 +353,8 @@ class MyApp(QtWidgets.QWidget):
         txterr = ""
         for site in sites:
             try:
+                # if site['cal'] == 'fr' and not yesterday in holidays_french:
+
                 response = requests.get(site['url'], verify=False )
                 response.raise_for_status()
             except RequestException as e:
