@@ -218,6 +218,7 @@ class MyApp(QtWidgets.QWidget):
         self.open_button_excel.clicked.connect(self.open_file_excel)
         self.modify_button_pdf.clicked.connect(self.modify_path_pdf)
         self.modify_button_namepdf.clicked.connect(self.modify_name)
+        self.update_run_button_status(day_of_week)
         self.run_button.clicked.connect(lambda: self.lancer_script(sites))
 
         self.progressbar = QProgressBar(self)
@@ -241,6 +242,14 @@ class MyApp(QtWidgets.QWidget):
         self.show()
     
     #############  FONCTIONS ###############
+    def update_run_button_status(self, day):
+        
+        if day in ["samedi", "dimanche"]:
+            self.run_button.setEnabled(False)
+            QMessageBox.information(self, "Jour fermé", "Jour fermé, le script ne peut être lancé.")
+        else:
+            self.run_button.setEnabled(True)
+
     def saveSettings(self):
         self.config.read('config.ini')
     
@@ -327,6 +336,7 @@ class MyApp(QtWidgets.QWidget):
 
         self.log(day_of_week)
         self.log(yesterday_day_of_week)
+        print(holidays_french)
 
          # Création fichier excel s'il n'existe pas
         excel_path = default_path_excel
@@ -353,8 +363,6 @@ class MyApp(QtWidgets.QWidget):
         txterr = ""
         for site in sites:
             try:
-                # if site['cal'] == 'fr' and not yesterday in holidays_french:
-
                 response = requests.get(site['url'], verify=False )
                 response.raise_for_status()
             except RequestException as e:
@@ -382,7 +390,16 @@ class MyApp(QtWidgets.QWidget):
 
                 row_number = sheet.max_row +1
                 sheet.cell(row = row_number, column = 1, value = date_day)
-                sheet.cell(row = row_number, column = 2, value = data)
+                if site['cal'] == 'fr' and yesterday_day_of_week not in holidays_french:
+                    sheet.cell(row = row_number, column = 2, value = data)
+                    self.log("OK fr")
+                elif site['cal'] == 'uk' and yesterday_day_of_week not in holidays_uk:
+                    sheet.cell(row = row_number, column = 2, value = data)
+                    self.log("OK uk")
+                else:
+                    sheet.cell(row = row_number, column = 2, value = "Jour non valeur")
+                    self.log("NOK")
+                
                 sheet.cell(row = row_number, column = 3, value = site['devise'])
                 sheet.cell(row = row_number, column = 4, value = site['unit'])
                 print (f"Valeur pour le site {site['name']} : {data}")
@@ -390,7 +407,10 @@ class MyApp(QtWidgets.QWidget):
                 rpa_row_number = rpa_sheet.max_row + 1
                 rpa_sheet.cell(row=rpa_row_number, column=1, value=site['metal'])
                 rpa_sheet.cell(row=rpa_row_number, column=2, value=site['name'])
-                rpa_sheet.cell(row=rpa_row_number, column=3, value=data)
+                if site['cal'] == 'fr' and not yesterday in holidays_french:
+                    rpa_sheet.cell(row=rpa_row_number, column=3, value=data)
+                else:
+                    rpa_sheet.cell(row=rpa_row_number, column=3, value="Jour non valeur")
                 rpa_sheet.cell(row=rpa_row_number, column=4, value=site['devise'])
                 rpa_sheet.cell(row=rpa_row_number, column=5, value=site['unit'])
 
