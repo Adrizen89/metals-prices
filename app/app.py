@@ -36,9 +36,18 @@ config.read('config.ini')
 locale.setlocale(locale.LC_ALL, 'fr_FR.UTF-8')
 now = datetime.datetime.now().date()
 yesterday = now - timedelta(days=1)
-date_yesterday = yesterday.strftime("%d/%m/%Y")
+
+# Ajd 'vendredi'
 day_of_week = now.strftime("%A")
+
+# Hier '01/06/2023
+date_yesterday = yesterday.strftime("%d/%m/%Y")
+
+# Hier 'jeudi'
 yesterday_day_of_week = yesterday.strftime("%A")
+
+# Hier 'jeudi 01 juin 2023
+yesterday_holiday = yesterday.strftime("%A %d %B")
 
 def get_uk_holidays(year):
     # Jours fériés fixes
@@ -72,8 +81,12 @@ def get_uk_holidays(year):
     
     easter_monday = easter(year) + timedelta(days=1)
     holidays_uk.append(easter_monday)
+
+    holidays_uk_formatted = [
+        holiday.strftime('%A %d %B').lower() for holiday in holidays_uk
+    ]
     
-    return holidays_uk
+    return holidays_uk_formatted
 
 
 def get_french_holidays(year):
@@ -86,7 +99,7 @@ def get_french_holidays(year):
         date(year, 8, 15),  # Assomption
         date(year, 11, 1),  # Toussaint
         date(year, 11, 11), # Armistice
-        date(year, 12, 25), # Noël
+        date(year, 12, 25),# Noël
     ]
     
     # Jours fériés variables
@@ -102,7 +115,11 @@ def get_french_holidays(year):
     # vendredi_saint = easter(year) - timedelta(days=2)
     # holidays_french.append(vendredi_saint)
 
-    return holidays_french
+    holidays_french_formatted = [
+        holiday.strftime('%A %d %B').lower() for holiday in holidays_french
+    ]
+
+    return holidays_french_formatted
 
 # Lire le chemin du fichier à partir du fichier config.ini
 config = configparser.ConfigParser()
@@ -144,8 +161,13 @@ class MyApp(QtWidgets.QWidget):
         self.param1_checkbox.setChecked(auto_start)
 
         if auto_start:
-            self.lancer_script(sites)
-            QtCore.QTimer.singleShot(120000, self.close)
+            if not self.path_pdf.text():
+                QMessageBox.warning(
+                self, "Chemin PDF manquant",
+                "Le chemin d'accès au PDF est manquant. Veuillez le configurer avant de lancer le script.")
+            else:    
+                self.lancer_script(sites)
+                QtCore.QTimer.singleShot(120000, self.close)
 
     def initUI(self):
 
@@ -218,7 +240,6 @@ class MyApp(QtWidgets.QWidget):
         self.open_button_excel.clicked.connect(self.open_file_excel)
         self.modify_button_pdf.clicked.connect(self.modify_path_pdf)
         self.modify_button_namepdf.clicked.connect(self.modify_name)
-        self.update_run_button_status(day_of_week)
         self.run_button.clicked.connect(lambda: self.lancer_script(sites))
 
         self.progressbar = QProgressBar(self)
@@ -240,13 +261,18 @@ class MyApp(QtWidgets.QWidget):
         # INIT #
         self.setLayout(layout)
         self.show()
+
+        self.update_run_button_status(day_of_week)
     
     #############  FONCTIONS ###############
     def update_run_button_status(self, day):
         
         if day in ["samedi", "dimanche"]:
             self.run_button.setEnabled(False)
-            QMessageBox.information(self, "Jour fermé", "Jour fermé, le script ne peut être lancé.")
+            QMessageBox.information(self, "Jour fermé.", "Jour fermé, le script ne peut être lancé.")
+        elif not self.path_pdf.text().strip():
+            self.run_button.setEnabled(False)
+            QMessageBox.information(self, "Chemin d'accès PDF manquant.", "Veuillez renseigner un chemin d'accès PDF valide.")
         else:
             self.run_button.setEnabled(True)
 
@@ -281,6 +307,7 @@ class MyApp(QtWidgets.QWidget):
     def modify_path_pdf(self):
         file_dialog = QFileDialog()
         path = file_dialog.getExistingDirectory(self, 'Sélectionner un dossier')
+        old_path = self.path_pdf.text()
         if path:
             self.path_pdf.setText(path)
             # Lire le fichier de configuration existant
@@ -293,9 +320,14 @@ class MyApp(QtWidgets.QWidget):
             with open('config.ini', 'w') as configfile:
                 config.write(configfile)
             self.log('Chemin modifié.')
+            if not self.restart_app():
+                self.path_pdf.setText(old_path)
+        self.update_run_button_status(day_of_week)
+        
 
     def modify_name(self):
         new_name, ok = QInputDialog.getText(self, 'Modifier le nom', 'Entrez le nouveau nom:')
+        old_name = self.label_name_pdf_path.text()
         if ok and new_name:
             self.path_namepdf.setText(new_name)
             # Lire le fichier de configuration existant
@@ -308,6 +340,8 @@ class MyApp(QtWidgets.QWidget):
             with open('config.ini', 'w') as configfile:
                 config.write(configfile)
             self.log('Nom modifié.')
+            if not self.restart_app():
+                self.label_name_pdf_path.setText(old_name)
 
     def open_file_excel(self):
         # Fonction pour ouvrir le fichier
@@ -317,6 +351,20 @@ class MyApp(QtWidgets.QWidget):
         except subprocess.CalledProcessError as e:
             self.log('Fichier non trouvé.')
 
+    def restart_app(self):
+        """Redémarre l'application."""
+        reply = QMessageBox.question(
+            self, "Redémarrage requis",
+            "L'application doit être redémarrée pour appliquer les changements. Voulez-vous redémarrer maintenant?",
+            QMessageBox.Yes | QMessageBox.No, QMessageBox.No
+        )
+
+        if reply == QMessageBox.Yes:
+            # Redémarrez l'application
+            QApplication.quit()
+            os.execl(sys.executable, sys.executable, *sys.argv)
+        else:
+            return False
 
     def lancer_script(self, sites):
 
@@ -327,16 +375,6 @@ class MyApp(QtWidgets.QWidget):
         self.progressbar.setValue(0)
         holidays_french = get_french_holidays(yesterday.year)
         holidays_uk = get_uk_holidays(yesterday.year)
-        # Vérification du jour de la semaine pour hier
-        if yesterday_day_of_week in ["samedi", "dimanche"] or yesterday in holidays_french or yesterday in holidays_uk:
-            QMessageBox.information(self, "Jour fermé", "Hier était un jour fermé.")
-            return  # On arrête l'exécution de la fonction ici
-        else:
-            QMessageBox.information(self, "Jour ouvré", "Hier était un jour ouvré.")
-
-        self.log(day_of_week)
-        self.log(yesterday_day_of_week)
-        print(holidays_french)
 
          # Création fichier excel s'il n'existe pas
         excel_path = default_path_excel
@@ -390,15 +428,15 @@ class MyApp(QtWidgets.QWidget):
 
                 row_number = sheet.max_row +1
                 sheet.cell(row = row_number, column = 1, value = date_day)
-                if site['cal'] == 'fr' and yesterday_day_of_week not in holidays_french:
+                # Si c'est une date calendrier FR
+                if site['cal'] == 'fr' and yesterday_holiday not in holidays_french:
                     sheet.cell(row = row_number, column = 2, value = data)
-                    self.log("OK fr")
-                elif site['cal'] == 'uk' and yesterday_day_of_week not in holidays_uk:
+                # Si c'est une date calendrier UK
+                elif site['cal'] == 'uk' and yesterday_holiday not in holidays_uk:
                     sheet.cell(row = row_number, column = 2, value = data)
-                    self.log("OK uk")
+                # Si jour férié
                 else:
                     sheet.cell(row = row_number, column = 2, value = "Jour non valeur")
-                    self.log("NOK")
                 
                 sheet.cell(row = row_number, column = 3, value = site['devise'])
                 sheet.cell(row = row_number, column = 4, value = site['unit'])
@@ -407,7 +445,9 @@ class MyApp(QtWidgets.QWidget):
                 rpa_row_number = rpa_sheet.max_row + 1
                 rpa_sheet.cell(row=rpa_row_number, column=1, value=site['metal'])
                 rpa_sheet.cell(row=rpa_row_number, column=2, value=site['name'])
-                if site['cal'] == 'fr' and not yesterday in holidays_french:
+                if site['cal'] == 'fr' and not yesterday_holiday in holidays_french:
+                    rpa_sheet.cell(row=rpa_row_number, column=3, value=data)
+                elif site['cal'] == 'uk' and not yesterday_holiday in holidays_uk:
                     rpa_sheet.cell(row=rpa_row_number, column=3, value=data)
                 else:
                     rpa_sheet.cell(row=rpa_row_number, column=3, value="Jour non valeur")

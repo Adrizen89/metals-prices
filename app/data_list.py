@@ -3,7 +3,7 @@ import app.utils_format as func
 
 
 sites = [
-{"cal": "uk","src": "ext" ,"name" : "2360" , "metal" : "360" ,"url" : "https://www.westmetall.com/en/markdaten.php?action=table&field=LME_Zn_cash", "func": "extract_2360", "unit": "KG", "devise": "€","name_pdf" : "metalvaluepostingfile.pdf", "format_func" : func.format_value_2360},
+{"cal": "uk","src": "pdf" ,"name" : "2360" , "metal" : "360" ,"url" : "https://materion.de.com:443/-/media/files/german/metalvaluepostingfile.pdf", "func": "extract_2360", "unit": "KG", "devise": "€","name_pdf" : "metalvaluepostingfile.pdf", "format_func" : func.format_value_2360},
 {"cal": "fr","src": "site","name" : "1AG1", "metal" : "AG" , "url":"https://www.cookson-clal.com/cours/", "func": "extract_1AG1", "unit" : "KG", "devise": "€", "format_func" : func.format_value_1AG1},
 {"cal": "fr","src": "ext" ,"name" : "1AG2" , "metal" : "AG" ,"url" : "https://prices.lbma.org.uk/json/silver.json?r=211497526", "func": "extract_1AG2", "unit": "OZ", "devise": "$", "format_func" : func.format_value_1AG2},
 {"cal": "fr","src": "site","name" : "3AL1" , "metal" : "AL" ,"url" : "https://www.westmetall.com/en/markdaten.php?action=average&field=LME_AI_cash", "func": "extract_3AL1", "unit" : "TO", "devise": "$", "format_func" : func.format_value_3AL1},

@@ -7,6 +7,7 @@ import os
 from .config import get_config_value, get_pdf_path, set_config_value
 import json
 from urllib.request import urlopen
+import locale
 
 config = configparser.ConfigParser()
 config.read('../config.ini')
@@ -347,9 +348,11 @@ def extract_2M30(soup):
     raw_date_data = date_tag.text.strip() if date_tag else "Date not found"
 
     # Convertir la date au format souhaité
+    locale.setlocale(locale.LC_TIME, "en_US.UTF-8")
     try:
         # Supprimer "Value from " pour obtenir seulement la date
-        clean_date_data = raw_date_data.replace("Value from ", "")
+        clean_date_data = raw_date_data.replace("Value from ", "").strip()
+        print(f'clean data : "{clean_date_data}"')
         # Convertir la chaîne de date au format souhaité
         datetime_obj = datetime.strptime(clean_date_data, '%b %d, %Y')
         formatted_date = datetime_obj.strftime('%d/%m/%Y')
