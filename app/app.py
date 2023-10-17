@@ -303,18 +303,11 @@ class MyApp(QtWidgets.QWidget):
         button_layout_namepdf.addWidget(self.modify_button_namepdf)
         layout.addLayout(button_layout_namepdf)
 
-        
-
-        # Bouton Lancer
-        self.run_button = QtWidgets.QPushButton('Lancer')
-        layout.addWidget(self.run_button)
-
         # Connexion Buttons avec fonctions
         self.modify_button_excel.clicked.connect(self.modify_path_excel)
         self.open_button_excel.clicked.connect(self.open_file_excel)
         self.modify_button_pdf.clicked.connect(self.modify_path_pdf)
         self.modify_button_namepdf.clicked.connect(self.modify_name)
-        self.run_button.clicked.connect(lambda: self.lancer_script(sites))
 
         self.progressbar = QProgressBar(self)
         layout.addWidget(self.progressbar)
@@ -375,6 +368,11 @@ class MyApp(QtWidgets.QWidget):
 
         # Ajout du layout droit au layout principal
         main_layout.addLayout(log_layout)
+
+        # Bouton Lancer
+        self.run_button = QtWidgets.QPushButton('Lancer')
+        layout.addWidget(self.run_button)
+        self.run_button.clicked.connect(lambda: self.lancer_script(sites))
 
         # Définition du layout principal comme layout de la fenêtre
         self.setLayout(main_layout)
@@ -558,7 +556,7 @@ class MyApp(QtWidgets.QWidget):
                 sheet = wb[site["name"]]
 
                 extracted_data = data_extraction_function(soup, checkbox_state=self.use_date_range_checkbox.isChecked(), start_date=start_date, end_date=end_date)
-                
+                print(extracted_data)
                 data = None
                 # Barre de progression
                 self.progressbar.setValue(self.progressbar.value() + 1)
@@ -566,12 +564,16 @@ class MyApp(QtWidgets.QWidget):
                 # Si la checkbox est cochée, traiter chaque paire de données extraites
                 if self.use_date_range_checkbox.isChecked():
                     for date_day, data in extracted_data:
+                        print(date_day, data)
                         row_number = sheet.max_row + 1
                         sheet.cell(row=row_number, column=1, value=date_day)
+                        print(date_day)
                         sheet.cell(row=row_number, column=2, value=data)
+                        sheet.cell(row=row_number, column=3, value=site['devise'])
+                        sheet.cell(row=row_number, column=4, value=site['unit'])
                 else:
                     # Si la checkbox n'est pas cochée, prenez la première paire de données extraites
-                    date_day, data = extracted_data[0] if extracted_data else (None, None)
+                    date_day, data = extracted_data
                     row_number = sheet.max_row + 1
                     sheet.cell(row=row_number, column=1, value=date_day)
                     
@@ -583,23 +585,26 @@ class MyApp(QtWidgets.QWidget):
                     else:
                         sheet.cell(row=row_number, column=2, value="Jour non valeur")
 
+                    sheet.cell(row=row_number, column=3, value=site['devise'])
+                    sheet.cell(row=row_number, column=4, value=site['unit'])
 
                  # Écrire toutes les valeurs dans l'onglet RPA
-                for date_day, data in extracted_data:
-                    rpa_row_number = rpa_sheet.max_row + 1
-                    rpa_sheet.cell(row=rpa_row_number, column=1, value=site['metal'])
-                    rpa_sheet.cell(row=rpa_row_number, column=2, value=site['name'])
-                    if site['cal'] == 'fr' and not yesterday_holiday in holidays_french:
-                        rpa_sheet.cell(row=rpa_row_number, column=3, value=data)
-                    elif site['cal'] == 'uk' and not yesterday_holiday in holidays_uk:
-                        rpa_sheet.cell(row=rpa_row_number, column=3, value=data)
-                    else:
-                        rpa_sheet.cell(row=rpa_row_number, column=3, value="Jour non valeur")
-                    rpa_sheet.cell(row=rpa_row_number, column=4, value=site['devise'])
-                    rpa_sheet.cell(row=rpa_row_number, column=5, value=site['unit'])
+                # for date_day, data in extracted_data:
+                #     rpa_row_number = rpa_sheet.max_row + 1
+                #     rpa_sheet.cell(row=rpa_row_number, column=1, value=site['metal'])
+                #     rpa_sheet.cell(row=rpa_row_number, column=2, value=site['name'])
+                #     if site['cal'] == 'fr' and not yesterday_holiday in holidays_french:
+                #         rpa_sheet.cell(row=rpa_row_number, column=3, value=data)
+                #     elif site['cal'] == 'uk' and not yesterday_holiday in holidays_uk:
+                #         rpa_sheet.cell(row=rpa_row_number, column=3, value=data)
+                #     else:
+                #         rpa_sheet.cell(row=rpa_row_number, column=3, value="Jour non valeur")
+                #     rpa_sheet.cell(row=rpa_row_number, column=4, value=site['devise'])
+                #     rpa_sheet.cell(row=rpa_row_number, column=5, value=site['unit'])
 
                 self.log(txterr)
                 wb.save(excel_path)
+                print("Saved")
             else:
                 print(f'Aucune fonction d\'extraction de données trouvées')
         replaced_message = f"{replaced_value_count} valeurs remplacées : {', '.join(f'{k}: {v}' for k, v in replaced_values.items())}"
