@@ -556,7 +556,6 @@ class MyApp(QtWidgets.QWidget):
                 sheet = wb[site["name"]]
 
                 extracted_data = data_extraction_function(soup, checkbox_state=self.use_date_range_checkbox.isChecked(), start_date=start_date, end_date=end_date)
-                print(extracted_data)
                 data = None
                 # Barre de progression
                 self.progressbar.setValue(self.progressbar.value() + 1)
@@ -564,10 +563,8 @@ class MyApp(QtWidgets.QWidget):
                 # Si la checkbox est cochée, traiter chaque paire de données extraites
                 if self.use_date_range_checkbox.isChecked():
                     for date_day, data in extracted_data:
-                        print(date_day, data)
                         row_number = sheet.max_row + 1
                         sheet.cell(row=row_number, column=1, value=date_day)
-                        print(date_day)
                         sheet.cell(row=row_number, column=2, value=data)
                         sheet.cell(row=row_number, column=3, value=site['devise'])
                         sheet.cell(row=row_number, column=4, value=site['unit'])

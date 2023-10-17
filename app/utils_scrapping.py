@@ -9,6 +9,7 @@ import json
 from urllib.request import urlopen
 import locale
 import re
+import requests
 
 config = configparser.ConfigParser()
 config.read('../config.ini')
@@ -94,23 +95,40 @@ def extract_1AG1(soup, start_date=None, end_date=None):
     return date, formatted_data
 
 # Extraction données lbma pour 1AG2 (EL)
-def extract_1AG2(soup, start_date=None, end_date=None):
+def extract_1AG2(soup, checkbox_state = False, start_date=None, end_date=None):
     url = "https://prices.lbma.org.uk/json/silver.json?r=211497526"
     response = urlopen(url).read()
     data = json.loads(response)
-    
-    latest_prices = data[-1]
-    first_value = latest_prices['v'].pop(0)
-    data_value = latest_prices['d']
 
-    date_object = datetime.strptime(data_value, '%Y-%m-%d')
-    formatted_date = date_object.strftime('%d/%m/%Y')
+    if checkbox_state and start_date and end_date:
 
-    data = str(first_value)
-    formatted_data = data.replace('.', ',')
-    
-    print(formatted_data)
-    return formatted_date, formatted_data
+        extracted_values = []
+
+
+        for entry in data:
+            entry_date_str = entry.get("d")
+            entry_date = datetime.strptime(entry_date_str, "%Y-%m-%d")
+            date_data_obj = entry_date.date()
+            
+            if start_date <= date_data_obj <= end_date:
+                value = entry['v'].pop(0)
+                if value:
+                    extracted_values.append((date_data_obj.strftime('%d/%m/%Y'), value))
+        extracted_values.reverse()
+        return extracted_values
+    else:
+        latest_prices = data[-1]
+        first_value = latest_prices['v'].pop(0)
+        data_value = latest_prices['d']
+
+        date_object = datetime.strptime(data_value, '%Y-%m-%d')
+        formatted_date = date_object.strftime('%d/%m/%Y')
+
+        data = str(first_value)
+        formatted_data = data.replace('.', ',')
+        
+        print(formatted_data)
+        return formatted_date, formatted_data
 
 # Extraction données pour 3AL1 (EL)
 def extract_3AL1(soup, checkbox_state=False, start_date=None, end_date=None):
@@ -172,26 +190,42 @@ def extract_3AL1(soup, checkbox_state=False, start_date=None, end_date=None):
         return date_data, formatted_data
 
 # Extraction données lbma pour 1AU2 (EL)
-def extract_1AU2(soup, start_date = None, end_date = None):
+def extract_1AU2(soup, checkbox_state = False, start_date = None, end_date = None):
 
     url = "https://prices.lbma.org.uk/json/gold_pm.json?r=666323974"
     response = urlopen(url).read()
     data = json.loads(response)
 
-    
- 
-    latest_prices = data[-1]
-    first_value = latest_prices['v'].pop(0)
-    data_value = latest_prices['d']
+    if checkbox_state and start_date and end_date:
 
-    date_object = datetime.strptime(data_value, '%Y-%m-%d')
-    formatted_date = date_object.strftime('%d/%m/%Y')
+        extracted_values = []
 
-    data = str(first_value)
-    formatted_data = data.replace('.', ',').replace(" ", "")
-    
-    print(formatted_data)
-    return formatted_date, formatted_data
+
+        for entry in data:
+            entry_date_str = entry.get("d")
+            entry_date = datetime.strptime(entry_date_str, "%Y-%m-%d")
+            date_data_obj = entry_date.date()
+            
+            if start_date <= date_data_obj <= end_date:
+                value = entry['v'].pop(0)
+                if value:
+                    extracted_values.append((date_data_obj.strftime('%d/%m/%Y'), value))
+        extracted_values.reverse()
+        return extracted_values
+
+    else:
+        latest_prices = data[-1]
+        first_value = latest_prices['v'].pop(0)
+        date_value = latest_prices['d']
+
+        date_object = datetime.strptime(date_value, '%Y-%m-%d')
+        formatted_date = date_object.strftime('%d/%m/%Y')
+
+        data = str(first_value)
+        formatted_data = data.replace('.', ',').replace(" ", "")
+        
+        print(formatted_data)
+        return formatted_date, formatted_data
 
 
 # Extraction données Cookson pour 1AU3 (EL)
@@ -448,37 +482,74 @@ def extract_2CUB(soup, start_date=None, end_date=None):
         return date, formatted_data
 
 # Extraction données 2M30
-def extract_2M30(soup, start_date=None, end_date=None):
-
+def extract_2M30(soup, checkbox_state = False, start_date=None, end_date=None):
+    url = 'https://www.wieland.com/en/ajax/metal-prices/general'
     # Trouver la table spécifiée
-    table = soup.find('table', class_='metalinfo-table table-metal-prices')
+    response = urlopen(url).read()
+    dat = json.loads(response)
 
-    # Trouver toutes les lignes (tr) à l'intérieur de cette table
-    rows = soup.find_all('tr')
-    second_row = rows[23]
 
-    # Trouver toutes les colonnes (td) de la ligne spécifiée
-    columns = second_row.find_all('td')
-    fourth_column = columns[1]
-    data = fourth_column.text.strip()
-    formatted_data = data.replace(',', '').replace('.', ',')
-    # Trouver la date dans le tag <p class="date small">
-    date_tag = soup.find("p", class_="date small")
-    raw_date_data = date_tag.text.strip() if date_tag else "Date not found"
+    if checkbox_state and start_date and end_date:
+        response = requests.get(url)
+        json_data = response.json()
 
-    # Convertir la date au format souhaité
-    locale.setlocale(locale.LC_TIME, "en_US.UTF-8")
-    try:
-        # Supprimer "Value from " pour obtenir seulement la date
-        clean_date_data = raw_date_data.replace("Value from ", "").strip()
-        print(f'clean data : "{clean_date_data}"')
-        # Convertir la chaîne de date au format souhaité
-        datetime_obj = datetime.strptime(clean_date_data, '%b %d, %Y')
-        formatted_date = datetime_obj.strftime('%d/%m/%Y')
-    except ValueError:
-        formatted_date = "Invalid date format"
+        # Vérification de la présence des clés nécessaires
+        if 'content' in json_data and 'chart' in json_data['content']:
+            chart_data = json_data['content']['chart']
 
-    return formatted_date, formatted_data
+            if 'labels' in chart_data and 'data' in chart_data:
+
+                # Date
+                labels = chart_data['labels']
+                # Valeurs
+                data = chart_data['data']
+                
+                # Maintenant, vous pouvez itérer sur les labels et les données
+                extracted_values = []
+    
+                for label, value in zip(labels, data):
+                    # Convertir la date du label en objet datetime
+                    label_date = datetime.strptime(label, '%m/%d/%Y')
+                    label_date = label_date.date()
+                    # Vérifier si la date du label est entre start_date et end_date
+                    if start_date <= label_date <= end_date:
+                        extracted_values.append((label, value))
+                        
+                return extracted_values
+            else:
+                print("Les clés 'labels' et/ou 'data' ne sont pas présentes dans les données.")
+        else:
+            print("Les clés 'content' et/ou 'chart' ne sont pas présentes dans les données.")
+                        
+
+    else:
+        table = soup.find('table', class_='metalinfo-table')
+        # Trouver toutes les lignes (tr) à l'intérieur de cette table
+        rows = soup.find_all('tr')
+        second_row = rows[23]
+
+        # Trouver toutes les colonnes (td) de la ligne spécifiée
+        columns = second_row.find_all('td')
+        fourth_column = columns[1]
+        data = fourth_column.text.strip()
+        formatted_data = data.replace(',', '').replace('.', ',')
+        # Trouver la date dans le tag <p class="date small">
+        date_tag = soup.find("p", class_="date small")
+        raw_date_data = date_tag.text.strip() if date_tag else "Date not found"
+
+        # Convertir la date au format souhaité
+        locale.setlocale(locale.LC_TIME, "en_US.UTF-8")
+        try:
+            # Supprimer "Value from " pour obtenir seulement la date
+            clean_date_data = raw_date_data.replace("Value from ", "").strip()
+            print(f'clean data : "{clean_date_data}"')
+            # Convertir la chaîne de date au format souhaité
+            datetime_obj = datetime.strptime(clean_date_data, '%b %d, %Y')
+            formatted_date = datetime_obj.strftime('%d/%m/%Y')
+        except ValueError:
+            formatted_date = "Invalid date format"
+
+        return formatted_date, formatted_data
 
 # Extraction données pour 2M37 (EL)
 def extract_2M37(soup, checkbox_state = False, start_date=None, end_date=None):
