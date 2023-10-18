@@ -220,6 +220,16 @@ class ScrappingSelectionDialog(QtWidgets.QDialog):
             if checkbox.isChecked():
                 selected_functions.append(checkbox.text())
         return selected_functions
+    
+    def count_checked_functions(self):
+        """Compte le nombre de fonctions sélectionnées (checkboxes cochées)"""
+        
+        count = 0
+        for checkbox in self.checkboxes:
+            if checkbox.isChecked():
+                count += 1
+        return count
+
 
 class MyApp(QtWidgets.QWidget):
     """
@@ -238,7 +248,7 @@ class MyApp(QtWidgets.QWidget):
         Ouvre une boîte de dialogue qui permet à l'utilisateur de sélectionner les fonctions de scrapping à exécuter.
         """
         
-        scrapping_functions = [site['name'] for site in sites]  # Créer une liste des noms de fonctions
+        scrapping_functions = [site['func'] for site in sites]  # Créer une liste des noms de fonctions
         dialog = ScrappingSelectionDialog(scrapping_functions, self.selected_scrapping_functions, self)
         if dialog.exec_() == QtWidgets.QDialog.Accepted:
             self.selected_scrapping_functions = dialog.get_selected_functions()
@@ -585,17 +595,17 @@ class MyApp(QtWidgets.QWidget):
         
         # Vérifications spécifiques sur certaines Rates avec la plage de dates
         if self.use_date_range_checkbox.isChecked():
-            if '2360' in self.selected_scrapping_functions:
+            if 'extract_2360' in self.selected_scrapping_functions:
                 QMessageBox.warning(self, "Avertissement", "La fonction 2360 ne peut pas être utilisée avec une plage de dates.")
                 return
-            if '2CUB' in self.selected_scrapping_functions:
+            if 'extract_2CUB' in self.selected_scrapping_functions:
                 QMessageBox.warning(self, "Avertissement", "La fonction 2CUB ne peut pas être utilisée avec une plage de dates.")
                 return
             
         # Initialisation des variables pour la gestion des valeurs remplacées et la progress bar
         replaced_values = {}
         replaced_value_count = 0
-        self.progressbar.setMaximum(len(sites))
+        self.progressbar.setMaximum()
         self.progressbar.setValue(0)
         
         # Récupération des jours fériés selon les différentes régions
@@ -699,19 +709,21 @@ class MyApp(QtWidgets.QWidget):
                     sheet.cell(row=row_number, column=4, value=site['unit'])
 
                  # Écrire toutes les valeurs dans l'onglet RPA
-                # for date_day, data in extracted_data:
-                #     rpa_row_number = rpa_sheet.max_row + 1
-                #     rpa_sheet.cell(row=rpa_row_number, column=1, value=site['metal'])
-                #     rpa_sheet.cell(row=rpa_row_number, column=2, value=site['name'])
-                #     if site['cal'] == 'fr' and not yesterday_holiday in holidays_french:
-                #         rpa_sheet.cell(row=rpa_row_number, column=3, value=data)
-                #     elif site['cal'] == 'uk' and not yesterday_holiday in holidays_uk:
-                #         rpa_sheet.cell(row=rpa_row_number, column=3, value=data)
-                #     else:
-                #         rpa_sheet.cell(row=rpa_row_number, column=3, value="Jour non valeur")
-                #     rpa_sheet.cell(row=rpa_row_number, column=4, value=site['devise'])
-                #     rpa_sheet.cell(row=rpa_row_number, column=5, value=site['unit'])
-
+                    extracted_data = [extracted_data]
+                    print(extracted_data)
+                    for date_day, data in extracted_data:
+                        rpa_row_number = rpa_sheet.max_row + 1
+                        rpa_sheet.cell(row=rpa_row_number, column=1, value=site['metal'])
+                        rpa_sheet.cell(row=rpa_row_number, column=2, value=site['name'])
+                        if site['cal'] == 'fr' and not yesterday_holiday in holidays_french:
+                            rpa_sheet.cell(row=rpa_row_number, column=3, value=data)
+                        elif site['cal'] == 'uk' and not yesterday_holiday in holidays_uk:
+                            rpa_sheet.cell(row=rpa_row_number, column=3, value=data)
+                        else:
+                            rpa_sheet.cell(row=rpa_row_number, column=3, value="Jour non valeur")
+                        rpa_sheet.cell(row=rpa_row_number, column=4, value=site['devise'])
+                        rpa_sheet.cell(row=rpa_row_number, column=5, value=site['unit'])
+                
                 self.log(txterr)
                 wb.save(excel_path)
                 print("Saved")

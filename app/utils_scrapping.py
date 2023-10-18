@@ -10,8 +10,6 @@ from urllib.request import urlopen
 import locale
 import re
 import requests
-import pandas as pd
-from pyxlsb import open_workbook as open_xlsb
 
 config = configparser.ConfigParser()
 config.read('../config.ini')
@@ -71,6 +69,7 @@ def extract_2360(soup, checkbox_state = False, start_date=None, end_date=None):
                     price_eur = None
                 formatted_data = price_eur.replace('.', ',')
                 date = f"Semaine {week_number}"
+                print(date, formatted_data)
                 return date, formatted_data  # Retourner la date et les données formatées extraites
 
     except FileNotFoundError:  # Gérer l'exception si le fichier PDF n'est pas trouvé
@@ -635,7 +634,7 @@ def extract_3CU3(soup, checkbox_state = False, start_date=None, end_date=None):
         
         return date_data, formatted_data # Retourner la date et valeur extraites
 
-def extract_2CUB(soup, start_date=None, end_date=None):
+def extract_2CUB(soup, checkbox_state = False, start_date=None, end_date=None):
     """
     Extraire les données spécifiques d'un fichier PDF et les formater.
     
