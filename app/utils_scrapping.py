@@ -10,50 +10,58 @@ from urllib.request import urlopen
 import locale
 import re
 import requests
+import pandas as pd
+from pyxlsb import open_workbook as open_xlsb
 
 config = configparser.ConfigParser()
 config.read('../config.ini')
 
-def extract_2360(soup, start_date=None, end_date=None):
-    """Extraire les données de la table Materion et les ajouter au classeur Excel"""
+def extract_2360(soup, checkbox_state = False, start_date=None, end_date=None):
+    """
+    Extraire les données de la table Materion depuis un fichier PDF et les retourner.
 
-    pdf_path = get_config_value('SETTINGS', 'pdf_path')
-    name_pdf = get_config_value('SETTINGS', 'name_pdf')
-
+    Cette fonction ouvre un fichier PDF spécifié, lit le texte et extrait les informations
+    pertinentes concernant l'Alliage 360. Elle retourne la date (numéro de la semaine) et
+    la valeur correspondante extraite.
+    
+    Parameters:
+    - soup (BeautifulSoup object): Objet BeautifulSoup du contenu web (non utilisé dans cette fonction).
+    - checkbox_state (bool): État de la checkbox (non utilisé dans cette fonction).
+    - start_date (datetime): Date de début pour l'extraction des données (non utilisé dans cette fonction).
+    - end_date (datetime): Date de fin pour l'extraction des données (non utilisé dans cette fonction).
+    
+    Returns:
+    - tuple: Un tuple contenant la date (numéro de la semaine) et la valeur extraite, ou 'err' si une erreur se produit.
+    """
+    
+    pdf_path = get_config_value('SETTINGS', 'pdf_path')  # Récupérer le chemin du PDF depuis les paramètres
+    name_pdf = get_config_value('SETTINGS', 'name_pdf')  # Récupérer le nom du PDF depuis les paramètres
     if not pdf_path:
-        pdf_path = os.getcwd()
-
-    path = f"{pdf_path}/{name_pdf}"
+        pdf_path = os.getcwd()  # Utiliser le répertoire courant si aucun chemin n'est spécifié
+    path = f"{pdf_path}/{name_pdf}"  # Construire le chemin complet vers le fichier PDF
+    
     try:
-        with open(path, 'rb') as pdf_materion:
-            reader_materion = PdfReader(pdf_materion)
-            page_materion = reader_materion.pages[0]
-            text_materion = page_materion.extract_text()
+        with open(path, 'rb') as pdf_materion:  # Ouvrir le fichier PDF en mode lecture binaire
+            reader_materion = PdfReader(pdf_materion)  # Créer un lecteur PDF
+            page_materion = reader_materion.pages[0]  # Lire la première page du PDF
+            text_materion = page_materion.extract_text()  # Extraire le texte de la page
             print('PDF lu')
-
-            lines = text_materion.split('\n')
-
+            lines = text_materion.split('\n')  # Diviser le texte en lignes
             alloy_line = None
             date = None
-
             # Date d'aujourd'hui
             today = datetime.today()
-
             # Date de la veille
             yesterday = today - timedelta(days=1)
-
             # Numéro de la semaine
             week_number = yesterday.isocalendar()[1]
-
             for line in lines:
                 print(line)
                 if "As of" in line.lower():
                     date = line.split("As Of")[-1].strip()
-
                 if line.startswith('Alloy 360'):
                     alloy_line = line
                     break
-
             if alloy_line is not None:
                 # Récupérer la valeur de la 4ème colonne
                 columns = alloy_line.split()
@@ -61,50 +69,110 @@ def extract_2360(soup, start_date=None, end_date=None):
                     price_eur = columns[4]
                 else:
                     price_eur = None
-
                 formatted_data = price_eur.replace('.', ',')
                 date = f"Semaine {week_number}"
-                return date, formatted_data
-    except FileNotFoundError:
+                return date, formatted_data  # Retourner la date et les données formatées extraites
+
+    except FileNotFoundError:  # Gérer l'exception si le fichier PDF n'est pas trouvé
         print(f"Le fichier PDF '{name_pdf}' n'a pas été trouvé. Passage à autre chose.")
         date = None
-        formatted_data = 'err'
+        formatted_data = 'err'  # Retourner 'err' si une erreur se produit
         return date, formatted_data
 
-# Extraction données Cookson pour 1AG1 (EL)
-def extract_1AG1(soup, start_date=None, end_date=None):
-    """Extraire les données de la table Cookson et les ajouter au classeur Excel"""
-    table = soup.find("table")
-    rows = soup.find_all("tr")
-    second_row = rows[3]
+def extract_1AG1(soup, checkbox_state = False, start_date=None, end_date=None):
+    """
+    Extraire les données de la table Cookson depuis un JSON ou une page HTML.
 
-    # Trouver la quatrième colonne de la table dans la deuxième ligne
-    columns = second_row.find_all("td")
-    last_column = columns[3]
+    Cette fonction récupère des données depuis une URL JSON si une plage de dates est spécifiée,
+    sinon elle extrait les données directement depuis une page HTML passée en paramètre.
+    
+    Parameters:
+    - soup (BeautifulSoup object): Objet BeautifulSoup du contenu web à analyser.
+    - checkbox_state (bool): État de la checkbox, détermine si une plage de dates doit être utilisée.
+    - start_date (datetime): Date de début pour l'extraction des données.
+    - end_date (datetime): Date de fin pour l'extraction des données.
+    
+    Returns:
+    - tuple or list: Retourne soit un tuple de (date, données formatées), soit une liste de tuples si une plage de dates est utilisée.
+    """
 
-    # Extraire la date de la première colonne du tbody
-    tbody = soup.find('tbody')
-    first_td_in_tbody = soup.find('td')
-    date_day = first_td_in_tbody.text.strip()
+    url = 'https://www.cookson-clal.com//downloads/fr_Argent.json?_=1697614496296'
+    
+    if checkbox_state and start_date and end_date:
+        response = urlopen(url).read() # Obtenir la réponse de l'URL
+        data = json.loads(response) # Charger les données JSON
+        
+        extracted_values = [] # Liste pour stocker les valeurs extraites
+        for item in data:
+            if item:  # Vérifier si l'item n'est pas une liste vide
+                timestamp_ms, value = item
+                # Convertir le timestamp de millisecondes en secondes
+                timestamp_s = timestamp_ms / 1000
+                # Créer un objet datetime à partir du timestamp
+                date = datetime.fromtimestamp(timestamp_s)
+                # Formatage de la date en chaîne de caractères (vous pouvez ajuster le format comme vous le souhaitez)
+                date_str = date.strftime('%d/%m/%Y')
+                
+                # Convertir date_str en objet datetime.date
+                date_obj = datetime.strptime(date_str, '%d/%m/%Y').date()
+                
+                # Vérifier si la date du label est entre start_date et end_date
+                if start_date <= date_obj <= end_date:
+                    extracted_values.append((date_str, value))
+                    
+        extracted_values.reverse() # Inverser l'ordre des valeurs extraites
+        return extracted_values
+    
+    else:
+        table = soup.find("table")
+        rows = soup.find_all("tr")
+        fourth_row = rows[3]
+
+        # Trouver la quatrième colonne de la table dans la quatrième ligne
+        columns = fourth_row.find_all("td")
+        last_column = columns[3]
+
+        # Extraire la date de la première colonne du tbody
+        tbody = soup.find('tbody')
+        first_td_in_tbody = soup.find('td')
+        date_day = first_td_in_tbody.text.strip()
 
 
-    # Extraire le texte de la quatrième colonne
-    data = last_column.text.strip()
-    formatted_data = data.replace('€', '')
-    date = date_day.replace("Cours de Londres du ", " ")
-    return date, formatted_data
+        # Extraire le texte de la quatrième colonne
+        data = last_column.text.strip()
+        formatted_data = data.replace('€', '')
+        date = date_day.replace("Cours de Londres du ", " ")
+        return date, formatted_data # Retourner la date et la valeur formatées extraite
 
-# Extraction données lbma pour 1AG2 (EL)
 def extract_1AG2(soup, checkbox_state = False, start_date=None, end_date=None):
+    """
+    Extraire les données de prix de l'argent depuis une URL JSON.
+    
+    Cette fonction récupère et traite les données de prix de l'argent depuis une URL JSON.
+    Si une plage de dates est spécifiée (et que checkbox_state est True), la fonction retourne
+    les données correspondant à cette plage. Sinon, elle retourne la dernière valeur disponible.
+    
+    Parameters:
+    - soup (BeautifulSoup object): Objet BeautifulSoup du contenu web à analyser (non utilisé dans cette fonction).
+    - checkbox_state (bool): État de la checkbox, détermine si une plage de dates doit être utilisée.
+    - start_date (datetime): Date de début pour l'extraction des données.
+    - end_date (datetime): Date de fin pour l'extraction des données.
+    
+    Returns:
+    - tuple or list: Retourne soit un tuple de (date, données formatées), soit une liste de tuples si une plage de dates est utilisée.
+    """
+    
     url = "https://prices.lbma.org.uk/json/silver.json?r=211497526"
-    response = urlopen(url).read()
-    data = json.loads(response)
+    
+    
+    response = urlopen(url).read() # Obtenir la réponse de l'URL
+    data = json.loads(response) # Charger les données JSON
 
     if checkbox_state and start_date and end_date:
 
-        extracted_values = []
+        extracted_values = [] # Liste pour stocker les valeurs extraites
 
-
+        # Parcourir chaque entrée dans les données
         for entry in data:
             entry_date_str = entry.get("d")
             entry_date = datetime.strptime(entry_date_str, "%Y-%m-%d")
@@ -114,8 +182,9 @@ def extract_1AG2(soup, checkbox_state = False, start_date=None, end_date=None):
                 value = entry['v'].pop(0)
                 if value:
                     extracted_values.append((date_data_obj.strftime('%d/%m/%Y'), value))
-        extracted_values.reverse()
-        return extracted_values
+
+        extracted_values.reverse() # Inverser l'ordre des valeurs extraites
+        return extracted_values # Retourner la liste des valeurs extraites
     else:
         latest_prices = data[-1]
         first_value = latest_prices['v'].pop(0)
@@ -128,11 +197,28 @@ def extract_1AG2(soup, checkbox_state = False, start_date=None, end_date=None):
         formatted_data = data.replace('.', ',')
         
         print(formatted_data)
-        return formatted_date, formatted_data
+        return formatted_date, formatted_data # Retourner la date et la valeur formatée extraite
 
-# Extraction données pour 3AL1 (EL)
 def extract_3AL1(soup, checkbox_state=False, start_date=None, end_date=None):
-    """Extraire les données de la table AL et les ajouter au classeur Excel"""
+    """
+    Extraire les données depuis une table HTML basée sur une plage de dates spécifiée.
+    
+    Cette fonction parcourt une table HTML et extrait les données de chaque ligne basée sur
+    une plage de dates spécifiée. Si la plage de dates est activée (checkbox_state=True) et
+    que des dates de début et de fin sont fournies, la fonction extrait les données qui 
+    correspondent à cette plage. Sinon, elle extrait les données de la première ligne de la table.
+    
+    Args:
+        soup (BeautifulSoup): Objet BeautifulSoup contenant le contenu HTML à analyser.
+        checkbox_state (bool, optional): Indique si une plage de dates doit être utilisée. Defaults to False.
+        start_date (datetime.date, optional): Date de début de la plage. Defaults to None.
+        end_date (datetime.date, optional): Date de fin de la plage. Defaults to None.
+    
+    Returns:
+        tuple or list: Un tuple contenant la date et la valeur extraites, ou une liste de tuples
+                       si une plage de dates est utilisée.
+    """
+    
     months = {
         'January': '01', 'February': '02', 'March': '03', 'April': '04', 'May': '05', 
         'June': '06', 'July': '07', 'August': '08', 'September': '09', 'October': '10',
@@ -146,7 +232,8 @@ def extract_3AL1(soup, checkbox_state=False, start_date=None, end_date=None):
 
         extracted_values = []
         
-        for row in rows[1:]:  # Ignorer l'en-tête
+        # Parcourir chaque ligne de la table, en ignorant l'en-tête
+        for row in rows[1:]:
             columns = row.find_all("td")
             
             if len(columns) < 2:  # nombre de colonne pour ligne séparatrice
@@ -171,7 +258,8 @@ def extract_3AL1(soup, checkbox_state=False, start_date=None, end_date=None):
                     data = fourth_column.text.strip()
                     formatted_data = data.replace(',', '').replace('.', ',')
                     extracted_values.append((date_data, formatted_data))
-        return extracted_values
+                    
+        return extracted_values # Retourner la liste des valeurs extraites
                 
     else:
         # Si la checkbox n'est pas cochée ou si les dates ne sont pas fournies, récupérer la première valeur
@@ -187,10 +275,28 @@ def extract_3AL1(soup, checkbox_state=False, start_date=None, end_date=None):
         
         data = fourth_column.text.strip()
         formatted_data = data.replace(',', '').replace('.', ',')
-        return date_data, formatted_data
+        
+        return date_data, formatted_data # Retourner la date et la valeur extraites
 
-# Extraction données lbma pour 1AU2 (EL)
 def extract_1AU2(soup, checkbox_state = False, start_date = None, end_date = None):
+    """
+    Extraire les données de prix de l'or depuis une URL JSON basée sur une plage de dates spécifiée.
+    
+    Cette fonction récupère les données de prix de l'or depuis une URL JSON. Si une plage de dates
+    est spécifiée (checkbox_state=True) et que des dates de début et de fin sont fournies, la fonction
+    extrait les données qui correspondent à cette plage. Sinon, elle extrait la dernière valeur disponible
+    dans les données JSON.
+    
+    Args:
+        soup (BeautifulSoup): Objet BeautifulSoup contenant le contenu HTML à analyser (non utilisé dans cette fonction).
+        checkbox_state (bool, optional): Indique si une plage de dates doit être utilisée. Defaults to False.
+        start_date (datetime.date, optional): Date de début de la plage. Defaults to None.
+        end_date (datetime.date, optional): Date de fin de la plage. Defaults to None.
+    
+    Returns:
+        tuple or list: Un tuple contenant la date et la valeur extraites, ou une liste de tuples
+                       si une plage de dates est utilisée.
+    """
 
     url = "https://prices.lbma.org.uk/json/gold_pm.json?r=666323974"
     response = urlopen(url).read()
@@ -200,20 +306,23 @@ def extract_1AU2(soup, checkbox_state = False, start_date = None, end_date = Non
 
         extracted_values = []
 
-
+        # Parcourir chaque entrée dans les données JSON
         for entry in data:
             entry_date_str = entry.get("d")
             entry_date = datetime.strptime(entry_date_str, "%Y-%m-%d")
             date_data_obj = entry_date.date()
             
+            # Vérifier si la date de l'entrée dans la plage spécifiée
             if start_date <= date_data_obj <= end_date:
                 value = entry['v'].pop(0)
                 if value:
                     extracted_values.append((date_data_obj.strftime('%d/%m/%Y'), value))
+                    
         extracted_values.reverse()
-        return extracted_values
+        return extracted_values # Retourner la liste des valeurs extraites
 
     else:
+        # Si aucune plage de dates spécifiée, obtenir la dernière valeur
         latest_prices = data[-1]
         first_value = latest_prices['v'].pop(0)
         date_value = latest_prices['d']
@@ -225,34 +334,99 @@ def extract_1AU2(soup, checkbox_state = False, start_date = None, end_date = Non
         formatted_data = data.replace('.', ',').replace(" ", "")
         
         print(formatted_data)
-        return formatted_date, formatted_data
+        return formatted_date, formatted_data # Retourner la date et la valeur extraites
 
+def extract_1AU3(soup, checkbox_state = False, start_date=None, end_date=None):
+    """
+    Extraire les données de prix de l'or depuis une URL JSON ou une page HTML basée sur une plage de dates spécifiée.
+    
+    Cette fonction récupère les données de prix de l'or depuis une URL JSON. Si une plage de dates
+    est spécifiée (checkbox_state=True) et que des dates de début et de fin sont fournies, la fonction
+    extrait les données qui correspondent à cette plage. Si aucune plage de dates n'est spécifiée,
+    la fonction extrait les données depuis une table HTML présente dans le contenu de la page soup.
+    
+    Args:
+        soup (BeautifulSoup): Objet BeautifulSoup contenant le contenu HTML à analyser.
+        checkbox_state (bool, optional): Indique si une plage de dates doit être utilisée. Defaults to False.
+        start_date (datetime.date, optional): Date de début de la plage. Defaults to None.
+        end_date (datetime.date, optional): Date de fin de la plage. Defaults to None.
+    
+    Returns:
+        tuple or list: Un tuple contenant la date et la valeur extraites, ou une liste de tuples
+                       si une plage de dates est utilisée.
+    """
 
-# Extraction données Cookson pour 1AU3 (EL)
-def extract_1AU3(soup, start_date=None, end_date=None):
-    """Extraire les données de la table Cookson et les ajouter au classeur Excel"""
-    table = soup.find("table")
-    rows = soup.find_all("tr")
-    second_row = rows[2]
+    url = 'https://www.cookson-clal.com//downloads/fr_Or.json?_=1697612764994'
+    
+    response = urlopen(url).read()
+    data = json.loads(response)
 
-    # Extraire la date de la première colonne du tbody
-    tbody = soup.find('tbody')
-    first_td_in_tbody = soup.find('td')
-    date_day = first_td_in_tbody.text.strip()
+    if checkbox_state and start_date and end_date:
+        extracted_values = []
+        
+        # Parcourir chaque entrée dans les données JSON
+        for item in data:
+            if item:  # Vérifier si l'item n'est pas une liste vide
+                timestamp_ms, value = item
+                # Convertir le timestamp de millisecondes en secondes
+                timestamp_s = timestamp_ms / 1000
+                # Créer un objet datetime à partir du timestamp
+                date = datetime.fromtimestamp(timestamp_s)
+                # Formatage de la date en chaîne de caractères (vous pouvez ajuster le format comme vous le souhaitez)
+                date_str = date.strftime('%d/%m/%Y')
+                # Convertir date_str en objet datetime.date
+                date_obj = datetime.strptime(date_str, '%d/%m/%Y').date()
+                
+                # Vérifier si la date de l'entrée est dans la plage spécifiée
+                if start_date <= date_obj <= end_date:
+                    extracted_values.append((date_str, value))
+                    
+        extracted_values.reverse()
+        return extracted_values # Retourner la liste de valeurs extraites
+    
+    else:
+        # Si aucune plage de dates n'est spécifiée, extraire les données depuis la table HTML
+        table = soup.find("table")
+        rows = soup.find_all("tr")
+        thirth_row = rows[2]
 
-    # Trouver la quatrième colonne de la table dans la deuxième ligne
-    columns = second_row.find_all("td")
-    last_column = columns[3]
+        # Extraire la date de la première colonne du tbody
+        tbody = soup.find('tbody')
+        first_td_in_tbody = soup.find('td')
+        date_day = first_td_in_tbody.text.strip()
 
-    # Extraire le texte de la quatrième colonne
-    data = last_column.text.strip()
-    data = data.replace(" ", "")
-    formatted_data = data.replace('.', ',').replace('€', '').replace(' ', '')
-    date = date_day.replace("Cours de Londres du ", " ")
-    return date, formatted_data
+        # Trouver la quatrième colonne de la table dans la troisième ligne
+        columns = thirth_row.find_all("td")
+        last_column = columns[3]
 
-# Extraction données 2B16
+        # Extraire le texte de la quatrième colonne
+        data = last_column.text.strip()
+        data = data.replace(" ", "")
+        formatted_data = data.replace('.', ',').replace('€', '').replace(' ', '')
+        date = date_day.replace("Cours de Londres du ", " ")
+        
+        return date, formatted_data # Retourner la date et la valeur extraites
+
 def extract_2B16(soup, checkbox_state=False, start_date=None, end_date=None):
+    """
+    Extraire et formater les données d'une table HTML basée sur une plage de dates spécifiée.
+    
+    Cette fonction parcourt une table HTML pour extraire des données. Si une plage de dates est
+    spécifiée (checkbox_state=True) et que des dates de début et de fin sont fournies, la fonction
+    extrait les données qui correspondent à cette plage. Si aucune plage de dates n'est spécifiée,
+    la fonction extrait les données de la première ligne de la table.
+    
+    Args:
+        soup (BeautifulSoup): Objet BeautifulSoup contenant le contenu HTML à analyser.
+        checkbox_state (bool, optional): Indique si une plage de dates doit être utilisée. Defaults to False.
+        start_date (datetime.date, optional): Date de début de la plage. Defaults to None.
+        end_date (datetime.date, optional): Date de fin de la plage. Defaults to None.
+    
+    Returns:
+        tuple or list: Un tuple contenant la date et la valeur extraites, ou une liste de tuples
+                       si une plage de dates est utilisée.
+    """
+    
     months = {
         'January': '01', 'February': '02', 'March': '03', 'April': '04', 'May': '05',
         'June': '06', 'July': '07', 'August': '08', 'September': '09', 'October': '10',
@@ -266,53 +440,68 @@ def extract_2B16(soup, checkbox_state=False, start_date=None, end_date=None):
 
         extracted_values = []
         
-        for row in rows[1:]:  # Ignorer l'en-tête
+        # Parcourir chaque ligne de la table, en ignorant l'en-tête
+        for row in rows[1:]:
             columns = row.find_all("td")
-
-            if len(columns) < 2:  # nombre de colonne pour ligne séparatrice
+            
+            # Ignorer les lignes qui n'ont pas assez de colonnes
+            if len(columns) < 2:
                 continue
             
             date_data_raw = columns[0].text.strip()
 
-            
-            if len(columns) >= 1: # On vérifie si le nombre de colonne est plus ou égal à 1
-                date_data_raw = columns[0].text.strip()
+            # Conversion de la date en format "JJ/MM/AAAA"
+            day, month_name, year = date_data_raw.replace('.', '').split()
+            month_num = months.get(month_name, '00')
+            date_data = f"{day}/{month_num}/{year}"
+        
+            date_data_obj = datetime.strptime(date_data, "%d/%m/%Y").date()
+
+            # Vérifier si la date est dans la plage spécifiée
+            if start_date <= date_data_obj <= end_date:
+                fourth_column = columns[1]
+                data = fourth_column.text.strip()
+                formatted_data = data.replace(',', '').replace('.', ',')
+                extracted_values.append((date_data, formatted_data))
                 
-            
-                # Conversion de la date du format "05. September 2023" à "05/09/2023"
-                day, month_name, year = date_data_raw.replace('.', '').split()
-                month_num = months.get(month_name, '00')  # Si le mois n'est pas trouvé, '00' est utilisé par défaut
-                date_data = f"{day}/{month_num}/{year}"
-            
-                date_data_obj = datetime.strptime(date_data, "%d/%m/%Y").date()
-            
-                if start_date <= date_data_obj <= end_date:
-                    fourth_column = columns[1]
-                    data = fourth_column.text.strip()
-                    formatted_data = data.replace(',', '').replace('.', ',')
-                    extracted_values.append((date_data, formatted_data))
-        return extracted_values
+        return extracted_values # Retourner la liste de valeurs extraites
                 
     else:
-        # Si la checkbox n'est pas cochée ou si les dates ne sont pas fournies, récupérer la première valeur
+        # Si aucune plage de dates n'est spécifiée, récupérer la première valeur
         second_row = rows[1]
         columns = second_row.find_all("td")
-        fourth_column = columns[1]
+        thirth_column = columns[1]
         date_data_raw = columns[0].text.strip()
         
-        # Conversion de la date et extraction des données
+        # Conversion et formatage de la date et des données
         day, month_name, year = date_data_raw.replace('.', '').split()
         month_num = months.get(month_name, '00')
         date_data = f"{day}/{month_num}/{year}"
         
-        data = fourth_column.text.strip()
+        data = thirth_column.text.strip()
         formatted_data = data.replace(',', '').replace('.', ',')
-        return date_data, formatted_data
+        
+        return date_data, formatted_data # Retourner la date et valeur extraites
 
-
-# Extraction données pour 3CU1 (EL)
 def extract_3CU1(soup, checkbox_state=False, start_date=None, end_date=None):
-    """Extraire les données de la table Cookson et les ajouter au classeur Excel"""
+    """
+    Extraire et formater les données d'une table HTML basée sur une plage de dates spécifiée.
+    
+    Cette fonction parcourt une table HTML pour extraire des données. Si une plage de dates est
+    spécifiée (checkbox_state=True) et que des dates de début et de fin sont fournies, la fonction
+    extrait les données qui correspondent à cette plage. Si aucune plage de dates n'est spécifiée,
+    la fonction extrait les données de la première ligne de la table.
+    
+    Args:
+        soup (BeautifulSoup): Objet BeautifulSoup contenant le contenu HTML à analyser.
+        checkbox_state (bool, optional): Indique si une plage de dates doit être utilisée. Defaults to False.
+        start_date (datetime.date, optional): Date de début de la plage. Defaults to None.
+        end_date (datetime.date, optional): Date de fin de la plage. Defaults to None.
+    
+    Returns:
+        tuple or list: Un tuple contenant la date et la valeur extraites, ou une liste de tuples
+                       si une plage de dates est utilisée.
+    """
 
     months = {
         'January': '01', 'February': '02', 'March': '03', 'April': '04', 'May': '05', 
@@ -327,52 +516,69 @@ def extract_3CU1(soup, checkbox_state=False, start_date=None, end_date=None):
 
         extracted_values = []
         
-        for row in rows[1:]:  # Ignorer l'en-tête
+        # Parcourir chaque ligne de la table, en ignorant l'en-tête
+        for row in rows[1:]:
             columns = row.find_all("td")
 
-            if len(columns) < 2:  # nombre de colonne pour ligne séparatrice
+            # Ignorer les lignes qui n'ont pas assez de colonnes
+            if len(columns) < 2:
                 continue
             
             date_data_raw = columns[0].text.strip()
-
-            
-            if len(columns) >= 1:
-                date_data_raw = columns[0].text.strip()
                 
-            
-                # Conversion de la date du format "05. September 2023" à "05/09/2023"
-                day, month_name, year = date_data_raw.replace('.', '').split()
-                month_num = months.get(month_name, '00')  # Si le mois n'est pas trouvé, '00' est utilisé par défaut
-                date_data = f"{day}/{month_num}/{year}"
-            
-                date_data_obj = datetime.strptime(date_data, "%d/%m/%Y").date()
-            
-                if start_date <= date_data_obj <= end_date:
-                    fourth_column = columns[1]
-                    data = fourth_column.text.strip()
-                    formatted_data = data.replace(',', '').replace('.', ',')
-                    extracted_values.append((date_data, formatted_data))
-        return extracted_values
+            # Conversion de la date du format "05. September 2023" à "05/09/2023"
+            day, month_name, year = date_data_raw.replace('.', '').split()
+            month_num = months.get(month_name, '00')
+            date_data = f"{day}/{month_num}/{year}"
+        
+            date_data_obj = datetime.strptime(date_data, "%d/%m/%Y").date()
+
+            # Vérifier si la date est dans la plage spécifiée
+            if start_date <= date_data_obj <= end_date:
+                fourth_column = columns[1]
+                data = fourth_column.text.strip()
+                formatted_data = data.replace(',', '').replace('.', ',')
+                extracted_values.append((date_data, formatted_data))
+                
+        return extracted_values # Retourner une liste de valeurs extraites
                 
     else:
-        # Si la checkbox n'est pas cochée ou si les dates ne sont pas fournies, récupérer la première valeur
+        # Si aucune plage n'est spécifiée, récupérer la première valeur
         second_row = rows[1]
         columns = second_row.find_all("td")
-        fourth_column = columns[1]
+        thirth_column = columns[1]
         date_data_raw = columns[0].text.strip()
         
-        # Conversion de la date et extraction des données
+        # Conversion et formatage de la date et des données
         day, month_name, year = date_data_raw.replace('.', '').split()
         month_num = months.get(month_name, '00')
         date_data = f"{day}/{month_num}/{year}"
         
-        data = fourth_column.text.strip()
+        data = thirth_column.text.strip()
         formatted_data = data.replace(',', '').replace('.', ',')
-        return date_data, formatted_data
+        
+        return date_data, formatted_data # Retourner la date et valeur extraites
 
-# Extraction données pour 3CU3 (EL)
 def extract_3CU3(soup, checkbox_state = False, start_date=None, end_date=None):
-    """Extraire les données de la table Cookson et les ajouter au classeur Excel"""
+    """
+    Extraire et formater les données d'une table HTML basée sur une plage de dates spécifiée.
+    
+    Cette fonction parcourt une table HTML pour extraire des données. Si une plage de dates est
+    spécifiée (checkbox_state=True) et que des dates de début et de fin sont fournies, la fonction
+    extrait les données qui correspondent à cette plage. Si aucune plage de dates n'est spécifiée,
+    la fonction extrait les données de la première ligne de la table.
+    
+    Args:
+        soup (BeautifulSoup): Objet BeautifulSoup contenant le contenu HTML à analyser.
+        checkbox_state (bool, optional): Indique si une plage de dates doit être utilisée. Defaults to False.
+        start_date (datetime.date, optional): Date de début de la plage. Defaults to None.
+        end_date (datetime.date, optional): Date de fin de la plage. Defaults to None.
+    
+    Returns:
+        tuple or list: Un tuple contenant la date et la valeur extraites, ou une liste de tuples
+                       si une plage de dates est utilisée.
+    """
+    
     months = {
         'January': '01', 'February': '02', 'March': '03', 'April': '04', 'May': '05',
         'June': '06', 'July': '07', 'August': '08', 'September': '09', 'October': '10',
@@ -386,51 +592,65 @@ def extract_3CU3(soup, checkbox_state = False, start_date=None, end_date=None):
 
         extracted_values = []
         
-        for row in rows[1:]:  # Ignorer l'en-tête
+        # Parcourir chaque ligne de la tablen en ignorant l'en-tête
+        for row in rows[1:]:
             columns = row.find_all("td")
 
-            if len(columns) < 2:  # nombre de colonne pour ligne séparatrice
+            # Ignorer les lignes qui n'ont pas assez de colonnes
+            if len(columns) < 2:
                 continue
             
             date_data_raw = columns[0].text.strip()
-
-            
-            if len(columns) >= 1: # On vérifie si le nombre de colonne est plus ou égal à 1
-                date_data_raw = columns[0].text.strip()
                 
-            
-                # Conversion de la date du format "05. September 2023" à "05/09/2023"
-                day, month_name, year = date_data_raw.replace('.', '').split()
-                month_num = months.get(month_name, '00')  # Si le mois n'est pas trouvé, '00' est utilisé par défaut
-                date_data = f"{day}/{month_num}/{year}"
-            
-                date_data_obj = datetime.strptime(date_data, "%d/%m/%Y").date()
-            
-                if start_date <= date_data_obj <= end_date:
-                    fourth_column = columns[1]
-                    data = fourth_column.text.strip()
-                    formatted_data = data.replace(',', '').replace('.', ',')
-                    extracted_values.append((date_data, formatted_data))
-        return extracted_values
+            # Conversion de la date en format "JJ/MM/AAAA"
+            day, month_name, year = date_data_raw.replace('.', '').split()
+            month_num = months.get(month_name, '00')
+            date_data = f"{day}/{month_num}/{year}"
+        
+            date_data_obj = datetime.strptime(date_data, "%d/%m/%Y").date()
+
+            # Vérifier si la date est dans la plage spécifiée
+            if start_date <= date_data_obj <= end_date:
+                fourth_column = columns[1]
+                data = fourth_column.text.strip()
+                formatted_data = data.replace(',', '').replace('.', ',')
+                extracted_values.append((date_data, formatted_data))
+                
+        return extracted_values # Retourner la liste des données extraites
                 
     else:
-        # Si la checkbox n'est pas cochée ou si les dates ne sont pas fournies, récupérer la première valeur
+        # Si aucune plage n'est spécifiée, récupérer la première valeur
         second_row = rows[1]
         columns = second_row.find_all("td")
-        fourth_column = columns[1]
+        second_column = columns[1]
         date_data_raw = columns[0].text.strip()
         
-        # Conversion de la date et extraction des données
+        # Conversion et formatage de la date et des données
         day, month_name, year = date_data_raw.replace('.', '').split()
         month_num = months.get(month_name, '00')
         date_data = f"{day}/{month_num}/{year}"
         
-        data = fourth_column.text.strip()
+        data = second_column.text.strip()
         formatted_data = data.replace(',', '').replace('.', ',')
-        return date_data, formatted_data
+        
+        return date_data, formatted_data # Retourner la date et valeur extraites
 
 def extract_2CUB(soup, start_date=None, end_date=None):
-    """Extraire les données de la table Materion et les ajouter au classeur Excel"""
+    """
+    Extraire les données spécifiques d'un fichier PDF et les formater.
+    
+    Cette fonction est conçue pour lire un fichier PDF spécifié, extraire du texte à partir
+    d'une page spécifique du PDF, et ensuite traiter ce texte pour récupérer des informations
+    pertinentes basées sur certaines conditions et formats prédéfinis.
+    
+    Args:
+        soup (BeautifulSoup): Objet BeautifulSoup, non utilisé dans cette fonction.
+        start_date (datetime, optional): Date de début, non utilisée dans cette fonction. Defaults to None.
+        end_date (datetime, optional): Date de fin, non utilisée dans cette fonction. Defaults to None.
+    
+    Returns:
+        tuple: Un tuple contenant la date formatée et les données extraites et formatées.
+    """
 
     pdf_path = get_config_value('SETTINGS', 'pdf_path')
     name_pdf = get_config_value('SETTINGS', 'name_pdf')
@@ -439,6 +659,7 @@ def extract_2CUB(soup, start_date=None, end_date=None):
         pdf_path = os.getcwd()
 
     path = f"{pdf_path}/{name_pdf}"
+
     try:
         with open(path, 'rb') as pdf_materion:
             reader_materion = PdfReader(pdf_materion)
@@ -474,48 +695,66 @@ def extract_2CUB(soup, start_date=None, end_date=None):
 
                 formatted_data = price_eur.replace('.', ',')
                 date = f" Semaine {week_number}"
-                return date, formatted_data
+                
+                return date, formatted_data # Retourner la date et valeur extraites
+            
     except FileNotFoundError:
         print(f"Le fichier PDF '{name_pdf}' n'a pas été trouvé. Passage à autre chose.")
         date = None
         formatted_data = 'err'
         return date, formatted_data
 
-# Extraction données 2M30
 def extract_2M30(soup, checkbox_state = False, start_date=None, end_date=None):
-    url = 'https://www.wieland.com/en/ajax/metal-prices/general'
-    # Trouver la table spécifiée
+    """
+    Extraire et formater les données de prix des métaux depuis une URL spécifiée.
+    
+    Cette fonction récupère les données depuis une URL, les traite et les formate selon
+    que certaines conditions soient remplies ou non, comme l'état d'une checkbox et des dates spécifiées.
+    
+    Args:
+        soup (BeautifulSoup): Objet BeautifulSoup pour analyser le contenu HTML.
+        checkbox_state (bool, optional): État de la checkbox pour déterminer le mode de traitement. Defaults to False.
+        start_date (datetime, optional): Date de début pour filtrer les données. Defaults to None.
+        end_date (datetime, optional): Date de fin pour filtrer les données. Defaults to None.
+    
+    Returns:
+        tuple: Un tuple contenant des dates formatées et des données extraites et formatées.
+    """
+    
+    url = 'https://www.wieland.com/en/ajax/metal-prices/general?refKey=2121'
+    
     response = urlopen(url).read()
-    dat = json.loads(response)
+    dat = json.loads(response) # Charger les données JSON
 
 
     if checkbox_state and start_date and end_date:
         response = requests.get(url)
         json_data = response.json()
 
-        # Vérification de la présence des clés nécessaires
+        # Extraire et traiter les données si les clés nécessaires sont présentes
         if 'content' in json_data and 'chart' in json_data['content']:
             chart_data = json_data['content']['chart']
 
             if 'labels' in chart_data and 'data' in chart_data:
 
-                # Date
                 labels = chart_data['labels']
-                # Valeurs
                 data = chart_data['data']
-                
-                # Maintenant, vous pouvez itérer sur les labels et les données
+
                 extracted_values = []
     
                 for label, value in zip(labels, data):
                     # Convertir la date du label en objet datetime
                     label_date = datetime.strptime(label, '%m/%d/%Y')
                     label_date = label_date.date()
-                    # Vérifier si la date du label est entre start_date et end_date
+                    formatted_date = label_date.strftime('%d/%m/%Y')
+                    
+                    # Vérifier si la date est entre start_date et end_date
                     if start_date <= label_date <= end_date:
-                        extracted_values.append((label, value))
-                        
-                return extracted_values
+                        extracted_values.append((formatted_date, value))
+
+                extracted_values.reverse()
+                return extracted_values # Retourner la liste de données extraites
+            
             else:
                 print("Les clés 'labels' et/ou 'data' ne sont pas présentes dans les données.")
         else:
@@ -530,8 +769,8 @@ def extract_2M30(soup, checkbox_state = False, start_date=None, end_date=None):
 
         # Trouver toutes les colonnes (td) de la ligne spécifiée
         columns = second_row.find_all('td')
-        fourth_column = columns[1]
-        data = fourth_column.text.strip()
+        second_column = columns[1]
+        data = second_column.text.strip()
         formatted_data = data.replace(',', '').replace('.', ',')
         # Trouver la date dans le tag <p class="date small">
         date_tag = soup.find("p", class_="date small")
@@ -549,11 +788,25 @@ def extract_2M30(soup, checkbox_state = False, start_date=None, end_date=None):
         except ValueError:
             formatted_date = "Invalid date format"
 
-        return formatted_date, formatted_data
+        return formatted_date, formatted_data # Retourner la date et valeur extraites
 
-# Extraction données pour 2M37 (EL)
 def extract_2M37(soup, checkbox_state = False, start_date=None, end_date=None):
-    """Extraire les données de la table Cookson et les ajouter au classeur Excel"""
+    """
+    Extraire et formater les données de prix des métaux depuis une page HTML.
+    
+    Cette fonction récupère et formate les données depuis une page HTML en se basant sur l'état
+    d'une checkbox et des dates de début et de fin spécifiées.
+    
+    Args:
+        soup (BeautifulSoup): Objet BeautifulSoup pour analyser le contenu HTML.
+        checkbox_state (bool, optional): État de la checkbox pour déterminer le mode de traitement. Defaults to False.
+        start_date (datetime, optional): Date de début pour filtrer les données. Defaults to None.
+        end_date (datetime, optional): Date de fin pour filtrer les données. Defaults to None.
+    
+    Returns:
+        list or tuple: Une liste de tuples contenant des dates et des données formatées si la checkbox est cochée,
+                       sinon un tuple contenant une date et une donnée formatées.
+    """
 
     months = {
         'January': '01', 'February': '02', 'March': '03', 'April': '04', 'May': '05',
@@ -567,39 +820,37 @@ def extract_2M37(soup, checkbox_state = False, start_date=None, end_date=None):
     if checkbox_state and start_date and end_date:
 
         extracted_values = []
-        
-        for row in rows[1:]:  # Ignorer l'en-tête
+        # Parcourir chaque ligne de la table en ignorant l'en-tête
+        for row in rows[1:]:
             columns = row.find_all("td")
 
-            if len(columns) < 2:  # nombre de colonne pour ligne séparatrice
+            # Ignorer les lignes qui n'ont pas assez de colonnes
+            if len(columns) < 2:
                 continue
             
             date_data_raw = columns[0].text.strip()
 
-            
-            if len(columns) >= 1: # On vérifie si le nombre de colonne est plus ou égal à 1
-                date_data_raw = columns[0].text.strip()
+            # Conversion de la date au format "JJ/MM/AAAA"
+            day, month_name, year = date_data_raw.replace('.', '').split()
+            month_num = months.get(month_name, '00')
+            date_data = f"{day}/{month_num}/{year}"
+        
+            date_data_obj = datetime.strptime(date_data, "%d/%m/%Y").date()
+
+            # Vérifier si la date est dans la plage de dates
+            if start_date <= date_data_obj <= end_date:
+                second_column = columns[1]
+                data = second_column.text.strip()
+                formatted_data = data.replace(',', '').replace('.', ',')
+                extracted_values.append((date_data, formatted_data))
                 
-            
-                # Conversion de la date du format "05. September 2023" à "05/09/2023"
-                day, month_name, year = date_data_raw.replace('.', '').split()
-                month_num = months.get(month_name, '00')  # Si le mois n'est pas trouvé, '00' est utilisé par défaut
-                date_data = f"{day}/{month_num}/{year}"
-            
-                date_data_obj = datetime.strptime(date_data, "%d/%m/%Y").date()
-            
-                if start_date <= date_data_obj <= end_date:
-                    fourth_column = columns[1]
-                    data = fourth_column.text.strip()
-                    formatted_data = data.replace(',', '').replace('.', ',')
-                    extracted_values.append((date_data, formatted_data))
-        return extracted_values
+        return extracted_values # Retourner la liste de données extraites
                 
     else:
-        # Si la checkbox n'est pas cochée ou si les dates ne sont pas fournies, récupérer la première valeur
+        # Si aucune plage n'est spécifiée, récupérer la première valeur
         second_row = rows[1]
         columns = second_row.find_all("td")
-        fourth_column = columns[1]
+        second_column = columns[1]
         date_data_raw = columns[0].text.strip()
         
         # Conversion de la date et extraction des données
@@ -607,20 +858,37 @@ def extract_2M37(soup, checkbox_state = False, start_date=None, end_date=None):
         month_num = months.get(month_name, '00')
         date_data = f"{day}/{month_num}/{year}"
         
-        data = fourth_column.text.strip()
+        data = second_column.text.strip()
         formatted_data = data.replace(',', '').replace('.', ',')
-        return date_data, formatted_data
+        
+        return date_data, formatted_data # Retourner la date et valeur extraites
 
-# Extraction données pour 3NI1 (EL)
 def extract_3NI1(soup, checkbox_state = False, start_date=None, end_date=None):
-    """Extraction NICKEL Ligne 2, Valeur Colonne 3"""
+    """
+    Extraire les données de nickel depuis une page HTML.
+    
+    Cette fonction récupère les données de nickel depuis une table HTML spécifique, 
+    en se basant sur l'état d'une checkbox et des dates de début et de fin spécifiées.
+    
+    Args:
+        soup (BeautifulSoup): Objet BeautifulSoup pour analyser le contenu HTML.
+        checkbox_state (bool, optional): État de la checkbox pour déterminer le mode de traitement. Defaults to False.
+        start_date (datetime, optional): Date de début pour filtrer les données. Defaults to None.
+        end_date (datetime, optional): Date de fin pour filtrer les données. Defaults to None.
+    
+    Returns:
+        list or tuple: Une liste de tuples contenant des dates et des données formatées si la checkbox est cochée,
+                       sinon un tuple contenant une date et une donnée formatées.
+    """
+    
     tables = soup.find_all('table', class_='table table-condensed table-hover table-striped')
     rows = tables[1].find_all("tr")
 
     if checkbox_state and start_date and end_date:
         extracted_values = []
 
-        for row in rows[1:]:  # Ignorer l'en-tête
+        # Parcourir chaque ligne de la table en ignorant l'en-tête
+        for row in rows[1:]:
             columns = row.find_all("td")
 
             if len(columns) >= 1:
@@ -643,8 +911,9 @@ def extract_3NI1(soup, checkbox_state = False, start_date=None, end_date=None):
                         extracted_values.append((date_obj.strftime('%d/%m/%Y'), value_data))
                 except ValueError as e:
                     print(f"Erreur lors de la conversion de la date: {e}")
+                    
         extracted_values.reverse()
-        return extracted_values
+        return extracted_values # Retourner la liste des données extraites
 
     else:
     # S'assurer qu'il y a au moins deux tables et sélectionner la deuxième
@@ -673,7 +942,8 @@ def extract_3NI1(soup, checkbox_state = False, start_date=None, end_date=None):
                         print(f"Erreur de format de date : {date_str}")
                         formatted_date = date_str  # Garder la date telle quelle si la conversion échoue
                     print(formatted_date, value_str)
-                    return formatted_date, value_str
+                    
+                    return formatted_date, value_str # Retourner la date et valeur extraites
                 else:
                     print("Les colonnes de date et de valeur sont manquantes.")
                     return None, None
@@ -684,17 +954,32 @@ def extract_3NI1(soup, checkbox_state = False, start_date=None, end_date=None):
             print("La deuxième table est introuvable.")
             return None, None
 
-
-# Extraction données pour 3SN1 (EL)
 def extract_3SN1(soup, checkbox_state = None, start_date=None, end_date=None):
-    """Extraction ETAIN Ligne 3, Valeur Colonne 3"""
+    """
+    Extraire les données d'étain depuis une page HTML.
+    
+    Cette fonction récupère les données d'étain depuis une table HTML spécifique, 
+    en se basant sur l'état d'une checkbox et des dates de début et de fin spécifiées.
+    
+    Args:
+        soup (BeautifulSoup): Objet BeautifulSoup pour analyser le contenu HTML.
+        checkbox_state (bool, optional): État de la checkbox pour déterminer le mode de traitement. Defaults to None.
+        start_date (datetime, optional): Date de début pour filtrer les données. Defaults to None.
+        end_date (datetime, optional): Date de fin pour filtrer les données. Defaults to None.
+    
+    Returns:
+        list or tuple: Une liste de tuples contenant des dates et des données formatées si la checkbox est cochée,
+                       sinon un tuple contenant une date et une donnée formatées.
+    """
+    
     tables = soup.find_all('table', class_='table table-condensed table-hover table-striped')
     rows = tables[1].find_all("tr")
 
     if checkbox_state and start_date and end_date:
         extracted_values = []
 
-        for row in rows[1:]:  # Ignorer l'en-tête
+        # Parcourir chaque ligne de la table en ignorant l'en-tête
+        for row in rows[1:]:
             columns = row.find_all("td")
 
             if len(columns) >= 1:
@@ -746,8 +1031,9 @@ def extract_3SN1(soup, checkbox_state = None, start_date=None, end_date=None):
                     except ValueError:
                         print(f"Erreur de format de date : {date_str}")
                         formatted_date = date_str  # Garder la date telle quelle si la conversion échoue
+                        
                     print(formatted_date, value_str)
-                    return formatted_date, value_str
+                    return formatted_date, value_str # Retourner la date et valeur extraites
                 else:
                     print("Les colonnes de date et de valeur sont manquantes.")
                     return None, None
@@ -758,9 +1044,25 @@ def extract_3SN1(soup, checkbox_state = None, start_date=None, end_date=None):
             print("La deuxième table est introuvable.")
             return None, None
 
-# Extraction données 3ZN1
 def extract_3ZN1(soup, checkbox_state=False, start_date=None, end_date=None):
-    """Extraire les données de la table Cookson et les ajouter au classeur Excel"""
+    """
+    Extraire les données d'une table HTML en fonction de l'état de la checkbox et d'une plage de dates.
+    
+    Cette fonction extrait les données d'une table trouvée dans une page HTML parsée.
+    Si la checkbox est cochée et que des dates de début et de fin sont fournies, la fonction extrait
+    plusieurs valeurs de la table qui correspondent à la plage de dates.
+    Sinon, elle extrait une seule valeur de la table.
+    
+    Args:
+        soup (BeautifulSoup): Objet BeautifulSoup contenant la page HTML parsée.
+        checkbox_state (bool): État de la checkbox qui détermine le mode d'extraction des données.
+        start_date (datetime.date, optional): Date de début de la plage pour filtrer les données.
+        end_date (datetime.date, optional): Date de fin de la plage pour filtrer les données.
+        
+    Returns:
+        list or tuple: Si la checkbox est cochée, retourne une liste de tuples (date, valeur).
+                       Sinon, retourne un tuple (date, valeur).
+    """
 
     months = {
         'January': '01', 'February': '02', 'March': '03', 'April': '04', 'May': '05', 
@@ -774,40 +1076,36 @@ def extract_3ZN1(soup, checkbox_state=False, start_date=None, end_date=None):
     if checkbox_state and start_date and end_date:
 
         extracted_values = []
-        
-        for row in rows[1:]:  # Ignorer l'en-tête
+        # Parcourir chaque ligne de la table en ignorant l'en-tête
+        for row in rows[1:]:
             columns = row.find_all("td")
 
-            if len(columns) < 2:  # nombre de colonne pour ligne séparatrice
+            # Eviter les lignes qui n'ont pas assez de colonnes
+            if len(columns) < 2:
                 continue
             
             date_data_raw = columns[0].text.strip()
-
-            
-            if len(columns) >= 1:
-                date_data_raw = columns[0].text.strip()
                 
-            
-                # Conversion de la date du format "05. September 2023" à "05/09/2023"
-                day, month_name, year = date_data_raw.replace('.', '').split()
-                month_num = months.get(month_name, '00')  # Si le mois n'est pas trouvé, '00' est utilisé par défaut
-                date_data = f"{day}/{month_num}/{year}"
-            
-                date_data_obj = datetime.strptime(date_data, "%d/%m/%Y").date()
-            
-                if start_date <= date_data_obj <= end_date:
-                    fourth_column = columns[1]
-                    data = fourth_column.text.strip()
-                    formatted_data = data.replace(',', '').replace('.', ',')
-                    extracted_values.append((date_data, formatted_data))
-        print("3ZN1 :",extracted_values)
-        return extracted_values
+            # Conversion de la date du format "05. September 2023" à "05/09/2023"
+            day, month_name, year = date_data_raw.replace('.', '').split()
+            month_num = months.get(month_name, '00')
+            date_data = f"{day}/{month_num}/{year}"
+        
+            date_data_obj = datetime.strptime(date_data, "%d/%m/%Y").date()
+        
+            if start_date <= date_data_obj <= end_date:
+                fourth_column = columns[1]
+                data = fourth_column.text.strip()
+                formatted_data = data.replace(',', '').replace('.', ',')
+                extracted_values.append((date_data, formatted_data))
+        
+        return extracted_values # Retourner la liste de données extraites
                 
     else:
-        # Si la checkbox n'est pas cochée ou si les dates ne sont pas fournies, récupérer la première valeur
+        # Si aucune plage n'est spécifiée, récupérer la première valeur
         second_row = rows[1]
         columns = second_row.find_all("td")
-        fourth_column = columns[1]
+        second_column = columns[1]
         date_data_raw = columns[0].text.strip()
         
         # Conversion de la date et extraction des données
@@ -815,9 +1113,10 @@ def extract_3ZN1(soup, checkbox_state=False, start_date=None, end_date=None):
         month_num = months.get(month_name, '00')
         date_data = f"{day}/{month_num}/{year}"
         
-        data = fourth_column.text.strip()
+        data = second_column.text.strip()
         formatted_data = data.replace(',', '').replace('.', ',')
-        return date_data, formatted_data
+        
+        return date_data, formatted_data # Retourner la date et valeur extraites
 
 
 # Extraction données pour 1AG3 (EL) Deja importé
