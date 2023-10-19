@@ -1,1 +1,4 @@
-.env
+.mon_env
+.dist
+.main
+.build

@@ -40,7 +40,7 @@ yesterday = now - timedelta(days=1)
 # Ajd 'vendredi'
 day_of_week = now.strftime("%A")
 
-# Hier '01/06/2023
+# Hier 'd/m/Y
 date_yesterday = yesterday.strftime("%d/%m/%Y")
 
 # Hier 'jeudi'
@@ -133,7 +133,6 @@ else:
     default_path_pdf = ""
     default_path_pdf_name = ""
 
-# Ajout de la fenêtre de chargement
 class LoadingWindow(QMainWindow):
     def __init__(self, parent):
         super().__init__(parent)
@@ -148,15 +147,150 @@ class LoadingWindow(QMainWindow):
     def close(self):
         self.destroy()
 
+class ScrappingSelectionDialog(QtWidgets.QDialog):
+    """
+    Une boîte de dialogue permettant à l'utilisateur de sélectionner les fonctions de scrapping à exécuter.
+    
+    Cette classe hérite de QDialog et est utilisée pour afficher une liste de fonctions de scrapping
+    sous forme de cases à cocher. L'utilisateur peut sélectionner ou désélectionner les fonctions
+    qu'il souhaite exécuter.
+    
+    Attributes:
+    checkboxes (list): Une liste de widgets QCheckBox, chacun correspondant à une fonction de scrapping.
+    toggle_select_button (QPushButton): Un bouton pour sélectionner ou désélectionner toutes les cases à cocher.
+    ok_button (QPushButton): Un bouton pour fermer la boîte de dialogue et appliquer les sélections.
+    
+    Methods:
+    __init__(self, scrapping_functions, selected_functions=[], parent=None): Initialise la boîte de dialogue.
+    
+    """
+    def __init__(self, scrapping_functions, selected_functions=[], parent=None):
+        """
+        Initialise la boîte de dialogue avec une liste de fonctions de scrapping et une liste de fonctions sélectionnées.
+        
+        Parameters:
+        scrapping_functions (list): Une liste de noms de fonctions de scrapping à afficher.
+        selected_functions (list, optional): Une liste de noms de fonctions qui doivent être pré-sélectionnés. Par défaut, aucune fonction n'est sélectionnée.
+        parent (QWidget, optional): Le widget parent de cette boîte de dialogue. Par défaut, il n'y a pas de parent.
+        
+        """
+        super().__init__(parent)
+        self.setWindowTitle('Sélectionner les Rates à récupérer.')
+        
+        self.layout = QtWidgets.QVBoxLayout(self)
+        
+        self.checkboxes = []  # Liste pour stocker les checkboxes
+
+        # Bouton pour sélectionner/désélectionner toutes les cases à cocher
+        self.toggle_select_button = QtWidgets.QPushButton('Sélectionner tous', self)
+        self.toggle_select_button.clicked.connect(self.toggle_select_all)
+        self.layout.addWidget(self.toggle_select_button)
+
+        for func in scrapping_functions:
+            checkbox = QtWidgets.QCheckBox(func)
+            checkbox.setWhatsThis("Ceci est une case à cocher. Cochez ou décochez pour récupérer les cours de cette Rate.")
+            if func in selected_functions:
+                checkbox.setChecked(True)
+            self.layout.addWidget(checkbox)
+            self.checkboxes.append(checkbox)
+        
+        
+        self.ok_button = QtWidgets.QPushButton('OK', self)
+        self.ok_button.setWhatsThis("Cliquez sur OK pour valider les Rates à récuperer.")
+        self.ok_button.clicked.connect(self.accept)
+        self.layout.addWidget(self.ok_button)
+
+        # Taille de la fenêtre
+        self.setFixedSize(500, 700)
+
+    def toggle_select_all(self):
+        # Méthode pour basculer entre sélectionner et désélectionner toutes les cases à cocher
+        if self.toggle_select_button.text() == 'Sélectionner tous':
+            for checkbox in self.checkboxes:
+                checkbox.setChecked(True)
+            self.toggle_select_button.setText('Désélectionner tous')
+        else:
+            for checkbox in self.checkboxes:
+                checkbox.setChecked(False)
+            self.toggle_select_button.setText('Sélectionner tous')
+
+    def get_selected_functions(self):
+        selected_functions = []
+        for checkbox in self.checkboxes:
+            if checkbox.isChecked():
+                selected_functions.append(checkbox.text())
+        return selected_functions
+    
+    def count_checked_functions(self):
+        """Compte le nombre de fonctions sélectionnées (checkboxes cochées)"""
+        
+        count = 0
+        for checkbox in self.checkboxes:
+            if checkbox.isChecked():
+                count += 1
+        return count
+
+
 class MyApp(QtWidgets.QWidget):
+    """
+    Une application Qt qui permet de gérer et d'exécuter des scripts de scrapping.
+
+    Cette classe hérite de QWidget et est utilisée pour créer l'interface utilisateur principale
+    de l'application, gérer les interactions utilisateur, et exécuter les scripts de scrapping
+    en fonction des paramètres sélectionnés par l'utilisateur.
+
+    Attributes:
+    config (ConfigParser): Un objet pour lire et écrire des configurations à un fichier INI.
+    selected_scrapping_functions (list): Une liste des fonctions de scrapping sélectionnées par l'utilisateur.
+    """
+    def open_scrapping_selection_dialog(self):
+        """
+        Ouvre une boîte de dialogue qui permet à l'utilisateur de sélectionner les fonctions de scrapping à exécuter.
+        """
+        
+        scrapping_functions = [site['func'] for site in sites]  # Créer une liste des noms de fonctions
+        dialog = ScrappingSelectionDialog(scrapping_functions, self.selected_scrapping_functions, self)
+        if dialog.exec_() == QtWidgets.QDialog.Accepted:
+            self.selected_scrapping_functions = dialog.get_selected_functions()
+            self.save_selected_functions()
+
+    def save_selected_functions(self):
+        """
+        Sauvegarde les fonctions de scrapping sélectionnées par l'utilisateur dans un fichier de configuration.
+        """
+        
+        selected_functions_str = ",".join(self.selected_scrapping_functions)
+        self.config.set('SETTINGS', 'selected_functions', selected_functions_str)
+        with open('config.ini', 'w') as configfile:
+            self.config.write(configfile)
+
+    def load_selected_functions(self):
+        """
+        Charge les fonctions de scrapping sélectionnées depuis un fichier de configuration.
+        """
+        
+        selected_functions_str = self.config.get('SETTINGS', 'selected_functions', fallback="")
+        self.selected_scrapping_functions = selected_functions_str.split(",") if selected_functions_str else []
+
     def __init__(self):
+        """
+        Initialise l'application avec l'interface utilisateur et charge les configurations.
+        """
+        
         super().__init__()
         self.setWindowTitle("Cours des métaux")
-        self.setGeometry(100, 100, 900, 820)
+        self.setGeometry(100, 100, 1000, 850)
         self.initUI()
+
+        self.layout = QtWidgets.QVBoxLayout(self)
+
+        self.select_scrapping_functions_button = QtWidgets.QPushButton('Sélectionner les fonctions de scrapping', self)
+        self.select_scrapping_functions_button.clicked.connect(self.open_scrapping_selection_dialog)
+        self.layout.addWidget(self.select_scrapping_functions_button)
 
         self.config = configparser.ConfigParser()
         self.config.read('config.ini')
+        self.load_selected_functions()
         auto_start = self.config.getboolean('SETTINGS', 'auto_start', fallback=False)
         self.param1_checkbox.setChecked(auto_start)
 
@@ -170,12 +304,17 @@ class MyApp(QtWidgets.QWidget):
                 QtCore.QTimer.singleShot(120000, self.close)
 
     def initUI(self):
-
+        """
+        Initialise l'interface utilisateur de l'application avec tous les widgets et layouts.
+        """
       ############ INTERFACE #############
 
-        layout = QtWidgets.QVBoxLayout()
+        main_layout = QtWidgets.QHBoxLayout() # Création du layout principal horizontal
+        
+        # Layout gauche
+        layout = QtWidgets.QVBoxLayout() # Création du layout vertical à gauche
 
-         # Label pour le chemin d'accès Excel
+        # Label pour le chemin d'accès Excel
         self.label_excel_path = QLabel("Chemin d'accès Excel :")
         layout.addWidget(self.label_excel_path)
 
@@ -194,7 +333,7 @@ class MyApp(QtWidgets.QWidget):
 
         layout.addLayout(button_layout_excel)
 
-         # Label pour le chemin d'accès Excel
+        # Label pour le chemin d'accès PDF
         self.label_pdf_path = QLabel("Chemin d'accès PDF :")
         layout.addWidget(self.label_pdf_path)
 
@@ -210,7 +349,7 @@ class MyApp(QtWidgets.QWidget):
         button_layout_pdf.addWidget(self.modify_button_pdf)
         layout.addLayout(button_layout_pdf)
 
-         # Label pour le chemin d'accès Excel
+         # Label pour le nom PDF
         self.label_name_pdf_path = QLabel("Nom du PDF :")
         layout.addWidget(self.label_name_pdf_path)
 
@@ -226,21 +365,11 @@ class MyApp(QtWidgets.QWidget):
         button_layout_namepdf.addWidget(self.modify_button_namepdf)
         layout.addLayout(button_layout_namepdf)
 
-        # Log
-        self.logger = QtWidgets.QTextEdit()
-        self.logger.setReadOnly(True)
-        layout.addWidget(self.logger)
-
-        # Bouton Lancer
-        self.run_button = QtWidgets.QPushButton('Lancer')
-        layout.addWidget(self.run_button)
-
         # Connexion Buttons avec fonctions
         self.modify_button_excel.clicked.connect(self.modify_path_excel)
         self.open_button_excel.clicked.connect(self.open_file_excel)
         self.modify_button_pdf.clicked.connect(self.modify_path_pdf)
         self.modify_button_namepdf.clicked.connect(self.modify_name)
-        self.run_button.clicked.connect(lambda: self.lancer_script(sites))
 
         self.progressbar = QProgressBar(self)
         layout.addWidget(self.progressbar)
@@ -248,137 +377,252 @@ class MyApp(QtWidgets.QWidget):
         # Création de la section Paramètres
         self.settings_group = QtWidgets.QGroupBox("Paramètres")
         settings_layout = QtWidgets.QVBoxLayout()
-        # Ajout de différents widgets pour les paramètres
+
+
+        # Bouton pour ouvrir la sélection des fonctions de scrapping
+        self.select_scrapping_functions_button = QtWidgets.QPushButton('Sélectionner les Rates à récupérer.')
+        self.select_scrapping_functions_button.clicked.connect(self.open_scrapping_selection_dialog)
+        settings_layout.addWidget(self.select_scrapping_functions_button)
+
+        # Date
+        self.start_date_edit = QtWidgets.QDateEdit(datetime.datetime.now().date())
+        self.end_date_edit = QtWidgets.QDateEdit(datetime.datetime.now().date())
+
+        # Champs choix des dates
+        self.start_date_edit.setCalendarPopup(True)
+        self.end_date_edit.setCalendarPopup(True)
+
+        settings_layout.addWidget(QtWidgets.QLabel("Date de début :"))
+        settings_layout.addWidget(self.start_date_edit)
+        settings_layout.addWidget(QtWidgets.QLabel("Date de fin :"))
+        settings_layout.addWidget(self.end_date_edit)
+
+        # Créez l'objet QCheckBox avant de l'ajouter au layout
+        self.use_date_range_checkbox = QtWidgets.QCheckBox("Utiliser la plage de dates")
+        self.use_date_range_checkbox.stateChanged.connect(self.toggle_date_widgets)
+        settings_layout.addWidget(self.use_date_range_checkbox)
+
+        self.start_date_edit.setEnabled(self.use_date_range_checkbox.isChecked())
+        self.end_date_edit.setEnabled(self.use_date_range_checkbox.isChecked())
+        
+
+        # Checkbox pour lancer automatiquement le programme
         self.param1_checkbox = QtWidgets.QCheckBox("Lancer le script automatiquement au démarrage de l'application.")
         self.param1_checkbox.stateChanged.connect(self.saveSettings)
+
         # Ajout des widgets au layout des paramètres
         settings_layout.addWidget(self.param1_checkbox)
+
         # Définition du layout des paramètres comme layout du QGroupBox
         self.settings_group.setLayout(settings_layout)
+
         # Ajout du QGroupBox au layout principal
         layout.addWidget(self.settings_group)
 
-        # INIT #
-        self.setLayout(layout)
-        self.show()
 
-        self.update_run_button_status(day_of_week)
+        main_layout.addLayout(layout)
+
+        # Layout droit (Log)
+        log_layout = QtWidgets.QVBoxLayout()
+        self.logger = QtWidgets.QTextEdit()
+        self.logger.setReadOnly(True)
+        log_layout.addWidget(self.logger)
+
+        # Ajout du layout droit au layout principal
+        main_layout.addLayout(log_layout)
+
+        # Bouton Lancer
+        self.run_button = QtWidgets.QPushButton('Lancer')
+        self.run_button.setFixedSize(500, 40)
+        self.run_button.setStyleSheet("""
+            QPushButton {
+                background-color: rgba(0, 113, 255, 255);
+                color: white;
+                font-size: 16px;
+            }
+            QPushButton:hover {
+                background-color: rgba(0, 113, 255, 200);
+            }
+        """)
+        
+        layout.addWidget(self.run_button)
+        self.run_button.clicked.connect(lambda: self.lancer_script(sites))
+
+        # Définition du layout principal comme layout de la fenêtre
+        self.setLayout(main_layout)
+
+        # INIT #
+        self.show() # Affichage de la fenêtre
+
+        self.update_run_button_status(day_of_week) # Mise à jour de l'état du bouton Lancer en fonction du jour de la semaine
     
     #############  FONCTIONS ###############
+
+    def toggle_date_widgets(self):
+        # Si la case est cochée
+        if self.use_date_range_checkbox.isChecked():
+            # Activer les widgets de date
+            self.start_date_edit.setEnabled(True)
+            self.end_date_edit.setEnabled(True)
+        else:
+            # Désactiver les widgets de date
+            self.start_date_edit.setEnabled(False)
+            self.end_date_edit.setEnabled(False)
+
     def update_run_button_status(self, day):
-        
+        # Si c'est le weekend
         if day in ["samedi", "dimanche"]:
-            self.run_button.setEnabled(False)
+            self.run_button.setEnabled(False) # Désactiver le bouton
             QMessageBox.information(self, "Jour fermé.", "Jour fermé, le script ne peut être lancé.")
+        #Si le chemin d'accès PDF est manquant ou invalide
         elif not self.path_pdf.text().strip():
-            self.run_button.setEnabled(False)
+            self.run_button.setEnabled(False) # Déseactiver le bouton
             QMessageBox.information(self, "Chemin d'accès PDF manquant.", "Veuillez renseigner un chemin d'accès PDF valide.")
         else:
-            self.run_button.setEnabled(True)
+            self.run_button.setEnabled(True) # Activer le bouton si tout est correct
 
     def saveSettings(self):
-        self.config.read('config.ini')
+        self.config.read('config.ini') # Lire le fichier de configuration
     
-        # Mettez à jour seulement la clé spécifique
+        # Ajouter ou mettre à jour une section et une clé spécifique
         if not self.config.has_section('SETTINGS'):
             self.config.add_section('SETTINGS')
         self.config.set('SETTINGS', 'auto_start', str(self.param1_checkbox.isChecked()))
         
-        # Écrivez le fichier de configuration mis à jour
+        # Sauvegarder les modifications dans le fichier de configuration
         with open('config.ini', 'w') as configfile:
             self.config.write(configfile)
 
     def modify_path_excel(self):
+        # Ouvrir une boîte de dialogue pour sélectionner un fichier Excel
         file_dialog = QFileDialog()
         path = file_dialog.getOpenFileName(self, 'Sélectionner un fichier Excel', '', 'Excel Files (*.xlsx *.xls)')[0]
-        if path:
+        
+        if path: # Si un chemin est sélectionné
             self.path_excel.setText(path)
-            # Lire le fichier de configuration existant
+            # Lire, modifier et sauvegarder le fichier de configuration
             config.read('config.ini')
-            # Mettre à jour seulement la clé spécifique
             if not config.has_section('SETTINGS'):
                 config.add_section('SETTINGS')
             config.set('SETTINGS', 'excel_path', path)
-            # Écrire le fichier de configuration mis à jour
             with open('config.ini', 'w') as configfile:
                 config.write(configfile)
-            self.log('Chemin modifié.')
+            self.log('Chemin modifié.') # Loguer que le chemin a été modifié
     
     def modify_path_pdf(self):
         file_dialog = QFileDialog()
         path = file_dialog.getExistingDirectory(self, 'Sélectionner un dossier')
         old_path = self.path_pdf.text()
-        if path:
+        if path: # Si un chemin est sélectionné
             self.path_pdf.setText(path)
-            # Lire le fichier de configuration existant
+            # Lire, modifier et sauvegarder le fichier de configuration
             config.read('config.ini')
-            # Mettre à jour seulement la clé spécifique
             if not config.has_section('SETTINGS'):
                 config.add_section('SETTINGS')
             config.set('SETTINGS', 'pdf_path', path)
-            # Écrire le fichier de configuration mis à jour
             with open('config.ini', 'w') as configfile:
                 config.write(configfile)
-            self.log('Chemin modifié.')
+            self.log('Chemin modifié.') # Loguer que le chemin a été modifié
             if not self.restart_app():
                 self.path_pdf.setText(old_path)
         self.update_run_button_status(day_of_week)
         
 
     def modify_name(self):
+        # Une boîte de dialogue est ouverte pour permettre à l'utilisateur d'entrer un nouveau nom
         new_name, ok = QInputDialog.getText(self, 'Modifier le nom', 'Entrez le nouveau nom:')
-        old_name = self.label_name_pdf_path.text()
+        old_name = self.label_name_pdf_path.text() # Stocker l'ancien nom
+        
+        # Si l'utilisateur clique sur OK et entre un nouveau nom
         if ok and new_name:
-            self.path_namepdf.setText(new_name)
-            # Lire le fichier de configuration existant
+            self.path_namepdf.setText(new_name) # Mettre à jour le nom affiché 
+            
+            # Lire et modifier le fichier de configuration pour réfléter le nouveau nom
             config.read('config.ini')
-            # Mettre à jour seulement la clé spécifique
             if not config.has_section('SETTINGS'):
                 config.add_section('SETTINGS')
             config.set('SETTINGS', 'name_pdf', new_name)
-            # Écrire le fichier de configuration mis à jour
+            
+            # Sauvegarder les modifications dans le fichier de configuration
             with open('config.ini', 'w') as configfile:
                 config.write(configfile)
-            self.log('Nom modifié.')
+            
+            self.log('Nom modifié.') # Loguer lorsque le nom est modifié
+            
+            # Redémarrer l'application pour appliquer les modifications
             if not self.restart_app():
                 self.label_name_pdf_path.setText(old_name)
 
     def open_file_excel(self):
-        # Fonction pour ouvrir le fichier
+        # Tenter d'ouvrir le fichier Excel avec une commande système
         try:
             subprocess.run(["start", default_path_excel], shell=True, check=True)
-            self.log('Fichier ouvert.')
+            self.log('Fichier ouvert.')# Loguer lorsque le fichier Excel est ouvert
         except subprocess.CalledProcessError as e:
-            self.log('Fichier non trouvé.')
+            self.log('Fichier non trouvé.') # Loguer un message d'erreur si le fichier ne s'ouvre pas
 
     def restart_app(self):
-        """Redémarre l'application."""
+        # Demander à l'utilisateur s'il souhaite redémarrer l'application
         reply = QMessageBox.question(
             self, "Redémarrage requis",
             "L'application doit être redémarrée pour appliquer les changements. Voulez-vous redémarrer maintenant?",
             QMessageBox.Yes | QMessageBox.No, QMessageBox.No
         )
 
+        # Si l'utilisateur choisit de redémarrer, exécuter le redémarrage
         if reply == QMessageBox.Yes:
-            # Redémarrez l'application
-            QApplication.quit()
-            os.execl(sys.executable, sys.executable, *sys.argv)
+            QApplication.quit() # Quitter l'application
+            os.execl(sys.executable, sys.executable, *sys.argv) # Redémarrer l'application
         else:
             return False
 
     def lancer_script(self, sites):
+        """
+        Exécute les scripts de scrapping en fonction des paramètres sélectionnés par l'utilisateur.
 
+        Parameters:
+        sites (list): Une liste de dictionnaires contenant des informations sur les sites à scraper.
+        
+        Cette méthode exécute plusieurs vérifications et configurations avant de lancer les scripts de scrapping.
+        Elle gère également les erreurs et les exceptions qui peuvent survenir pendant le processus.
+        
+        """
+        
+        # Vérifie si des fonctions de scapping ont été sélectionnées
+        if not self.selected_scrapping_functions:
+            QMessageBox.warning(self, "Attention", "Veuillez selectionner au moins une Rate.")
+            return
+        
+        # Vérifications spécifiques sur certaines Rates avec la plage de dates
+        if self.use_date_range_checkbox.isChecked():
+            if 'extract_2360' in self.selected_scrapping_functions:
+                QMessageBox.warning(self, "Avertissement", "La fonction 2360 ne peut pas être utilisée avec une plage de dates.")
+                return
+            if 'extract_2CUB' in self.selected_scrapping_functions:
+                QMessageBox.warning(self, "Avertissement", "La fonction 2CUB ne peut pas être utilisée avec une plage de dates.")
+                return
+            
+        # Initialisation des variables pour la gestion des valeurs remplacées et la progress bar
         replaced_values = {}
         replaced_value_count = 0
-
         self.progressbar.setMaximum(len(sites))
         self.progressbar.setValue(0)
+        
+        # Récupération des jours fériés selon les différentes régions
         holidays_french = get_french_holidays(yesterday.year)
         holidays_uk = get_uk_holidays(yesterday.year)
 
-         # Création fichier excel s'il n'existe pas
+        # Récupération des dates de début et de fin si la plage de dates est cochée
+        if self.use_date_range_checkbox.isChecked():
+            start_date = self.start_date_edit.date().toPyDate()
+            end_date = self.end_date_edit.date().toPyDate()
+        else:
+            start_date = end_date = datetime.date.today()
+
+         # Gestion du fichier Excel : création ou chargement
         excel_path = default_path_excel
         if not excel_path or not os.path.exists(excel_path):
+            # (Code pour créer un nouveau fichier Excel)
             excel_path = os.path.join(os.getcwd(), "metals_prices.xlsx")
             wb = Workbook()
             for site in sites:
@@ -387,75 +631,102 @@ class MyApp(QtWidgets.QWidget):
             wb.save(excel_path)
             set_config_value("SETTINGS", "excel_path", excel_path)
             self.path_excel.setText(excel_path)
-        # On charge le fichier s'il existe  
         else:
+            # (Code pour charger le fichier Excel s'il existe)
             wb = load_workbook(excel_path)
-
+        # (Code pour créer l'onglet RPA)
         rpa_sheet = wb['RPA'] if 'RPA' in wb.sheetnames else wb.create_sheet('RPA')
-        # Clear existing data in "RPA" sheet
+        # (Nettoyer l'onglet RPA)
         if rpa_sheet.max_row > 1:
             rpa_sheet.delete_rows(2, rpa_sheet.max_row-1)
 
 
-
+        # Init de la variable pour les messages d'erreur
         txterr = ""
+        # Parcourir chaque site dans la liste des sites
         for site in sites:
+            data_extraction_function_name = site['func']
+            
+            #Si la fonction de scrapping n'est pas sélectionnée, passer au site suivant
+            if data_extraction_function_name not in self.selected_scrapping_functions:
+                continue
+            
             try:
-                response = requests.get(site['url'], verify=False )
+                # Tenter de récupérer le contenu du site
+                response = requests.get(site['url'], verify=False)
                 response.raise_for_status()
+                
             except RequestException as e:
+                # En cas d'erreur, loguer le message d'erreur et passer au suivant
                 txterr = f"Erreur de connexion pour le site de {site['name']} : {e}"
                 self.log(txterr)
                 continue
-
+            
+            # Parser le contenu de la page avec BeautifulSoup
             soup = BeautifulSoup(response.content, "html.parser")
-            data_extraction_function_name = site['func']
+            
+            # Vérifier si la fonction de scrapping existe
             if hasattr(scrapping, data_extraction_function_name):
+                
+                # Si le contenu est sous forme PDF, télécharger le PDF
                 if site['src'] == 'pdf':
                     download_pdf(response, site['name_pdf'], default_path_pdf)
-                else:
-                    print('')
-
+                
+                # Obtenir la fonction de scrapping et la feuille Excel correspondante
                 data_extraction_function = getattr(scrapping, data_extraction_function_name)
                 sheet = wb[site["name"]]
-                date_day, data, *_ = data_extraction_function(soup)
-                data, txterr, replaced, replaced_values = check_and_return_value(data, sheet, site['format_func'], txterr, site, data, replaced_values)
-                self.progressbar.setValue(self.progressbar.value()+1)
 
-                if replaced:
-                     replaced_value_count += 1
-
-
-                row_number = sheet.max_row +1
-                sheet.cell(row = row_number, column = 1, value = date_day)
-                # Si c'est une date calendrier FR
-                if site['cal'] == 'fr' and yesterday_holiday not in holidays_french:
-                    sheet.cell(row = row_number, column = 2, value = data)
-                # Si c'est une date calendrier UK
-                elif site['cal'] == 'uk' and yesterday_holiday not in holidays_uk:
-                    sheet.cell(row = row_number, column = 2, value = data)
-                # Si jour férié
-                else:
-                    sheet.cell(row = row_number, column = 2, value = "Jour non valeur")
+                # Extraire les données en utilisant la fonction de scrapping
+                extracted_data = data_extraction_function(soup, checkbox_state=self.use_date_range_checkbox.isChecked(), start_date=start_date, end_date=end_date)
+                data = None
                 
-                sheet.cell(row = row_number, column = 3, value = site['devise'])
-                sheet.cell(row = row_number, column = 4, value = site['unit'])
-                print (f"Valeur pour le site {site['name']} : {data}")
-                 # Write data to RPA sheet
-                rpa_row_number = rpa_sheet.max_row + 1
-                rpa_sheet.cell(row=rpa_row_number, column=1, value=site['metal'])
-                rpa_sheet.cell(row=rpa_row_number, column=2, value=site['name'])
-                if site['cal'] == 'fr' and not yesterday_holiday in holidays_french:
-                    rpa_sheet.cell(row=rpa_row_number, column=3, value=data)
-                elif site['cal'] == 'uk' and not yesterday_holiday in holidays_uk:
-                    rpa_sheet.cell(row=rpa_row_number, column=3, value=data)
+                # Mettre à jour la barre de progression
+                self.progressbar.setValue(self.progressbar.value() + 1)
+                
+                # Si la plage de dates est cochée, écrire chaque paire de données extraites dans la feuille Excel
+                if self.use_date_range_checkbox.isChecked():
+                    for date_day, data in extracted_data:
+                        row_number = sheet.max_row + 1
+                        sheet.cell(row=row_number, column=1, value=date_day)
+                        sheet.cell(row=row_number, column=2, value=data)
+                        sheet.cell(row=row_number, column=3, value=site['devise'])
+                        sheet.cell(row=row_number, column=4, value=site['unit'])
                 else:
-                    rpa_sheet.cell(row=rpa_row_number, column=3, value="Jour non valeur")
-                rpa_sheet.cell(row=rpa_row_number, column=4, value=site['devise'])
-                rpa_sheet.cell(row=rpa_row_number, column=5, value=site['unit'])
+                    # Si plage de dates n'est pas cochée, écrire seulement la première paire de données extraites dans la feuille Excel
+                    date_day, data = extracted_data
+                    row_number = sheet.max_row + 1
+                    sheet.cell(row=row_number, column=1, value=date_day)
+                    
+                    # Vérifier les jours fériés et écrire la valeur appropriée dans la feuille Excel
+                    if site['cal'] == 'fr' and date_day not in holidays_french:
+                        sheet.cell(row=row_number, column=2, value=data)
+                    elif site['cal'] == 'uk' and date_day not in holidays_uk:
+                        sheet.cell(row=row_number, column=2, value=data)
+                    else:
+                        sheet.cell(row=row_number, column=2, value="Jour non valeur")
 
+                    sheet.cell(row=row_number, column=3, value=site['devise'])
+                    sheet.cell(row=row_number, column=4, value=site['unit'])
+
+                 # Écrire toutes les valeurs dans l'onglet RPA
+                    extracted_data = [extracted_data]
+                    print(extracted_data)
+                    for date_day, data in extracted_data:
+                        rpa_row_number = rpa_sheet.max_row + 1
+                        rpa_sheet.cell(row=rpa_row_number, column=1, value=site['metal'])
+                        rpa_sheet.cell(row=rpa_row_number, column=2, value=site['name'])
+                        if site['cal'] == 'fr' and not yesterday_holiday in holidays_french:
+                            rpa_sheet.cell(row=rpa_row_number, column=3, value=data)
+                        elif site['cal'] == 'uk' and not yesterday_holiday in holidays_uk:
+                            rpa_sheet.cell(row=rpa_row_number, column=3, value=data)
+                        else:
+                            rpa_sheet.cell(row=rpa_row_number, column=3, value="Jour non valeur")
+                        rpa_sheet.cell(row=rpa_row_number, column=4, value=site['devise'])
+                        rpa_sheet.cell(row=rpa_row_number, column=5, value=site['unit'])
+                
                 self.log(txterr)
                 wb.save(excel_path)
+                print("Saved")
             else:
                 print(f'Aucune fonction d\'extraction de données trouvées')
         replaced_message = f"{replaced_value_count} valeurs remplacées : {', '.join(f'{k}: {v}' for k, v in replaced_values.items())}"
