@@ -6,7 +6,6 @@ import sys
 def is_executable():
     return getattr(sys, 'frozen', False)
 
-
 def get_config_path():
     if is_executable():
          application_path = os.path.dirname(sys.executable)
@@ -28,7 +27,6 @@ def get_code_config_path():
     if not is_executable():
         return os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.ini')
     return None
-
 
 def get_config_value(section, key):
     config = configparser.ConfigParser()
@@ -53,8 +51,6 @@ def set_config_value(section, variable, value):
     config.set(section, variable, value)
     with open(config_path, 'w') as configfile:
         config.write(configfile)
-
-
 
 def get_pdf_path():
     pdf_path = get_config_value("SETTINGS", "pdf_path")

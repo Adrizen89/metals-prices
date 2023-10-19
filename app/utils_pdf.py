@@ -12,7 +12,6 @@ def download_pdf(response, name, folder):
     else:
         print(f"Erreur lors du téléchargement de {name}")
 
-
 # Suppression des PDFs
 def delete_pdfs(path_pdf, name_materion):
     """Supprimer deux fichiers PDF"""
