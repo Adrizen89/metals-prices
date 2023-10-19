@@ -1,7 +1,14 @@
 import re
 def check_and_return_value(value, sheet, format_func, txterr, site, data, replaced_values):
     replaced = False
-    valueformat = data.replace('.', ',').replace(' ', '')
+    
+    # Si les données sont un tuple, utilisez la deuxième valeur, sinon utilisez les données telles quelles
+    if isinstance(data, tuple):
+        data_value = data[1]  # Utilisez la deuxième valeur du tuple
+    else:
+        data_value = data  # Utilisez les données telles quelles
+    
+    valueformat = data_value.replace('.', ',').replace(' ', '')
     pattern = r'^-|\d+(\s*\d{3})*(,\d+)?$'
 
     if re.match(pattern, valueformat) and valueformat != "-" and valueformat != "init":
