@@ -119,7 +119,6 @@ def extract_1AG1(soup, checkbox_state = False, start_date=None, end_date=None):
                 if start_date <= date_obj <= end_date:
                     extracted_values.append((date_str, value))
                     
-        extracted_values.reverse() # Inverser l'ordre des valeurs extraites
         return extracted_values
     
     else:
@@ -182,7 +181,6 @@ def extract_1AG2(soup, checkbox_state = False, start_date=None, end_date=None):
                 if value:
                     extracted_values.append((date_data_obj.strftime('%d/%m/%Y'), value))
 
-        extracted_values.reverse() # Inverser l'ordre des valeurs extraites
         return extracted_values # Retourner la liste des valeurs extraites
     else:
         latest_prices = data[-1]
@@ -258,6 +256,7 @@ def extract_3AL1(soup, checkbox_state=False, start_date=None, end_date=None):
                     formatted_data = data.replace(',', '').replace('.', ',')
                     extracted_values.append((date_data, formatted_data))
                     
+        extracted_values.reverse()
         return extracted_values # Retourner la liste des valeurs extraites
                 
     else:
@@ -317,7 +316,6 @@ def extract_1AU2(soup, checkbox_state = False, start_date = None, end_date = Non
                 if value:
                     extracted_values.append((date_data_obj.strftime('%d/%m/%Y'), value))
                     
-        extracted_values.reverse()
         return extracted_values # Retourner la liste des valeurs extraites
 
     else:
@@ -380,7 +378,6 @@ def extract_1AU3(soup, checkbox_state = False, start_date=None, end_date=None):
                 if start_date <= date_obj <= end_date:
                     extracted_values.append((date_str, value))
                     
-        extracted_values.reverse()
         return extracted_values # Retourner la liste de valeurs extraites
     
     else:
@@ -463,6 +460,7 @@ def extract_2B16(soup, checkbox_state=False, start_date=None, end_date=None):
                 formatted_data = data.replace(',', '').replace('.', ',')
                 extracted_values.append((date_data, formatted_data))
                 
+        extracted_values.reverse()
         return extracted_values # Retourner la liste de valeurs extraites
                 
     else:
@@ -538,7 +536,7 @@ def extract_3CU1(soup, checkbox_state=False, start_date=None, end_date=None):
                 data = fourth_column.text.strip()
                 formatted_data = data.replace(',', '').replace('.', ',')
                 extracted_values.append((date_data, formatted_data))
-                
+        extracted_values.reverse()
         return extracted_values # Retourner une liste de valeurs extraites
                 
     else:
@@ -614,7 +612,8 @@ def extract_3CU3(soup, checkbox_state = False, start_date=None, end_date=None):
                 data = fourth_column.text.strip()
                 formatted_data = data.replace(',', '').replace('.', ',')
                 extracted_values.append((date_data, formatted_data))
-                
+            
+        extracted_values.reverse()
         return extracted_values # Retourner la liste des données extraites
                 
     else:
@@ -721,13 +720,10 @@ def extract_2M30(soup, checkbox_state = False, start_date=None, end_date=None):
     """
     
     url = 'https://www.wieland.com/en/ajax/metal-prices/general?refKey=2121'
-    
-    response = urlopen(url).read()
-    dat = json.loads(response) # Charger les données JSON
 
 
     if checkbox_state and start_date and end_date:
-        response = requests.get(url)
+        response = requests.get(url, verify=False)
         json_data = response.json()
 
         # Extraire et traiter les données si les clés nécessaires sont présentes
@@ -751,7 +747,6 @@ def extract_2M30(soup, checkbox_state = False, start_date=None, end_date=None):
                     if start_date <= label_date <= end_date:
                         extracted_values.append((formatted_date, value))
 
-                extracted_values.reverse()
                 return extracted_values # Retourner la liste de données extraites
             
             else:
@@ -842,7 +837,8 @@ def extract_2M37(soup, checkbox_state = False, start_date=None, end_date=None):
                 data = second_column.text.strip()
                 formatted_data = data.replace(',', '').replace('.', ',')
                 extracted_values.append((date_data, formatted_data))
-                
+
+        extracted_values.reverse()
         return extracted_values # Retourner la liste de données extraites
                 
     else:
@@ -880,10 +876,10 @@ def extract_3NI1(soup, checkbox_state = False, start_date=None, end_date=None):
                        sinon un tuple contenant une date et une donnée formatées.
     """
     
-    tables = soup.find_all('table', class_='table table-condensed table-hover table-striped')
-    rows = tables[1].find_all("tr")
 
     if checkbox_state and start_date and end_date:
+        tables = soup.find_all('table', class_='table table-condensed table-hover table-striped')
+        rows = tables[1].find_all("tr")
         extracted_values = []
 
         # Parcourir chaque ligne de la table en ignorant l'en-tête
@@ -911,16 +907,17 @@ def extract_3NI1(soup, checkbox_state = False, start_date=None, end_date=None):
                 except ValueError as e:
                     print(f"Erreur lors de la conversion de la date: {e}")
                     
-        extracted_values.reverse()
         return extracted_values # Retourner la liste des données extraites
 
     else:
+        tables = soup.find_all('table', class_='table table-condensed table-hover table-striped')
+        rows = tables[1].find_all("tr")
     # S'assurer qu'il y a au moins deux tables et sélectionner la deuxième
         if len(tables) > 1:
             table = tables[1]
             
             # Obtenir la première ligne de la table (en excluant l'en-tête)
-            last_row = table.find_all('tr')[42] if table else None
+            last_row = table.find_all('tr')[43] if table else None
             print(last_row)
             if last_row:
                 columns = last_row.find_all('td')
@@ -971,10 +968,11 @@ def extract_3SN1(soup, checkbox_state = None, start_date=None, end_date=None):
                        sinon un tuple contenant une date et une donnée formatées.
     """
     
-    tables = soup.find_all('table', class_='table table-condensed table-hover table-striped')
-    rows = tables[1].find_all("tr")
+    
 
     if checkbox_state and start_date and end_date:
+        tables = soup.find_all('table', class_='table table-condensed table-hover table-striped')
+        rows = tables[1].find_all("tr")
         extracted_values = []
 
         # Parcourir chaque ligne de la table en ignorant l'en-tête
@@ -1001,16 +999,18 @@ def extract_3SN1(soup, checkbox_state = None, start_date=None, end_date=None):
                         extracted_values.append((date_obj.strftime('%d/%m/%Y'), value_data))
                 except ValueError as e:
                     print(f"Erreur lors de la conversion de la date: {e}")
-        extracted_values.reverse()
+        
         return extracted_values
 
     else:
+        tables = soup.find_all('table', class_='table table-condensed table-hover table-striped')
+        rows = tables[1].find_all("tr")
     # S'assurer qu'il y a au moins deux tables et sélectionner la deuxième
         if len(tables) > 1:
             table = tables[1]
             
             # Obtenir la première ligne de la table (en excluant l'en-tête)
-            last_row = table.find_all('tr')[42] if table else None
+            last_row = table.find_all('tr')[43] if table else None
             print(last_row)
             if last_row:
                 columns = last_row.find_all('td')
@@ -1069,11 +1069,11 @@ def extract_3ZN1(soup, checkbox_state=False, start_date=None, end_date=None):
         'November': '11', 'December': '12'
     }
 
-    table = soup.find("table")
-    rows = soup.find_all("tr")
+    
     
     if checkbox_state and start_date and end_date:
-
+        table = soup.find("table")
+        rows = soup.find_all("tr")
         extracted_values = []
         # Parcourir chaque ligne de la table en ignorant l'en-tête
         for row in rows[1:]:
@@ -1098,9 +1098,12 @@ def extract_3ZN1(soup, checkbox_state=False, start_date=None, end_date=None):
                 formatted_data = data.replace(',', '').replace('.', ',')
                 extracted_values.append((date_data, formatted_data))
         
+        extracted_values.reverse()
         return extracted_values # Retourner la liste de données extraites
                 
     else:
+        table = soup.find("table")
+        rows = soup.find_all("tr")
         # Si aucune plage n'est spécifiée, récupérer la première valeur
         second_row = rows[1]
         columns = second_row.find_all("td")
