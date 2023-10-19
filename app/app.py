@@ -605,7 +605,7 @@ class MyApp(QtWidgets.QWidget):
         # Initialisation des variables pour la gestion des valeurs remplacées et la progress bar
         replaced_values = {}
         replaced_value_count = 0
-        self.progressbar.setMaximum()
+        self.progressbar.setMaximum(len(sites))
         self.progressbar.setValue(0)
         
         # Récupération des jours fériés selon les différentes régions
