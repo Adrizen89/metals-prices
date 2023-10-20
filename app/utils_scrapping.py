@@ -746,7 +746,7 @@ def extract_2M30(soup, checkbox_state = False, start_date=None, end_date=None):
                     # Vérifier si la date est entre start_date et end_date
                     if start_date <= label_date <= end_date:
                         extracted_values.append((formatted_date, value))
-
+                
                 return extracted_values # Retourner la liste de données extraites
             
             else:
@@ -916,8 +916,10 @@ def extract_3NI1(soup, checkbox_state = False, start_date=None, end_date=None):
         if len(tables) > 1:
             table = tables[1]
             
+            # Obtenir la table qui contient les données voulues
+            first_table = table.find('table', class_='table table-condensed table-hover table-striped')
             # Obtenir la première ligne de la table (en excluant l'en-tête)
-            last_row = table.find_all('tr')[43] if table else None
+            last_row = first_table.find_all('tr')[-1] if table else None
             print(last_row)
             if last_row:
                 columns = last_row.find_all('td')
@@ -1009,8 +1011,10 @@ def extract_3SN1(soup, checkbox_state = None, start_date=None, end_date=None):
         if len(tables) > 1:
             table = tables[1]
             
+            # Obtenir la table qui contient les données voulues
+            first_table = table.find('table', class_='table table-condensed table-hover table-striped')
             # Obtenir la première ligne de la table (en excluant l'en-tête)
-            last_row = table.find_all('tr')[43] if table else None
+            last_row = first_table.find_all('tr')[-1] if table else None
             print(last_row)
             if last_row:
                 columns = last_row.find_all('td')
