@@ -29,7 +29,7 @@ jobs:
 
     - name: Archive files
       run: |
-        7z a Metals_Prices.zip ./dist/*
+        7z a Metals_Prices.zip ./dist/* ./config.ini ./theme.qss ./app/* ./resources/*
 
     - name: Bump version and push tag
       id: create_tag
