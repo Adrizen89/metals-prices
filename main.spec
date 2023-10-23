@@ -6,9 +6,9 @@ block_cipher = None
 
 a = Analysis(
     ['main.py'],
-    pathex=[],
+    pathex=['app', 'resources'],
     binaries=[],
-    datas=[('config.ini', '.')],
+    datas=[('config.ini', '.'), ('theme.qss', '.')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -35,7 +35,7 @@ exe = EXE(
     upx=True,
     upx_exclude=[],
     runtime_tmpdir=None,
-    console=False,
+    console=True,
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
