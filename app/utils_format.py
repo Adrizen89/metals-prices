@@ -23,8 +23,6 @@ def check_and_return_value(value, sheet, format_func, txterr, site, data, replac
     
     return value, txterr, replaced, replaced_values
 
-    
-
 
     # try:
         
