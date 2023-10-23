@@ -1,7 +1,13 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+def get_requirements():
+    with open('requirements.txt', 'r') as file:
+        lines = file.readlines()
+    # Extraire uniquement les noms des bibliothèques, en ignorant les versions ou autres spécifications
+    return [line.split('==')[0] for line in lines]
 
 block_cipher = None
+
 
 
 a = Analysis(
@@ -9,7 +15,7 @@ a = Analysis(
     pathex=['app', 'resources'],
     binaries=[],
     datas=[('config.ini', '.'), ('theme.qss', '.')],
-    hiddenimports=[],
+    hiddenimports=get_requirements(),
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
