@@ -1,4 +1,4 @@
-from openpyxl import load_workbook
+
 from app.app import MyApp
 import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QVBoxLayout, QWidget, QPushButton, QFileDialog, QTextEdit, QLineEdit
