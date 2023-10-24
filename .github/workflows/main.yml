@@ -25,11 +25,11 @@ jobs:
 
     - name: Create Executable
       run: |
-        pyinstaller -y --distpath ./build --onefile --add-data "config.ini;." --add-data "theme.qss;." --paths "app" --paths "resources" main.py
+        pyinstaller -y --onefile --add-data "config.ini;." --add-data "theme.qss;." --paths "app" --paths "resources" main.py
 
     - name: Archive output content
       run: |
-        7z a release.zip ./build/*
+        7z a release.zip ./dist/*
 
     - name: Bump version and push tag
       id: create_tag
