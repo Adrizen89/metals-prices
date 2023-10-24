@@ -25,7 +25,7 @@ def check_latest_version():
 # Fonction pour télécharger la nouvelle version
 def download_latest_version(url):
     response = requests.get(url)
-    with open('new_version.exe', 'wb') as file:
+    with open('main.exe', 'wb') as file:
         file.write(response.content)
 
 # Fonction pour mettre à jour la version du fichier JSON
@@ -35,7 +35,7 @@ def update_local_version_file(latest_version_info):
 
 # Fonction pour lancer l'installateur
 def launch_installer():
-    subprocess.run(['new_version.exe'])
+    subprocess.run(['main.exe'])
 
 
 def load_stylesheet(qss_file_path: str) -> str:
