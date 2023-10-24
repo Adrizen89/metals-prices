@@ -65,4 +65,11 @@ jobs:
             "version": "${{ steps.create_tag.outputs.new_tag }}",
             "url": "https://github.com/Adrizen89/metals-prices/releases/download/${{ steps.create_tag.outputs.new_tag }}/main.exe"
         }' > version.json
-        # Téléchargez version.json sur votre serveur ou commit dans votre dépôt (si nécessaire)
+        # Configurer Git
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        
+        # Commit et push le fichier JSON mis à jour
+        git add version.json
+        git commit -m "Update version.json for release ${{ steps.create_tag.outputs.new_tag }}"
+        git push
