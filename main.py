@@ -9,10 +9,16 @@ import locale
 import subprocess
 import json
 import requests
+from pathlib import Path
+
+def resource_path(relative_path):
+    """ Obtenez le chemin absolu de la ressource, fonctionne pour le dev et pour le PyInstaller """
+    base_path = getattr(sys, '_MEIPASS', Path(__file__).parent)
+    return Path(base_path) / relative_path
 
 # Fonction pour obtenir la version actuelle
 def get_current_version():
-    with open('version.json', 'r') as file:
+    with open(resource_path('version.json'), 'r') as file:
         current_version_info = json.load(file)
     return current_version_info['version']
 
