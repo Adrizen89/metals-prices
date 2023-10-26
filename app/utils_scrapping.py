@@ -10,6 +10,7 @@ from urllib.request import urlopen
 import locale
 import re
 import requests
+from bs4 import BeautifulSoup
 
 config = configparser.ConfigParser()
 config.read('../config.ini')
@@ -74,8 +75,8 @@ def extract_2360(soup, checkbox_state = False, start_date=None, end_date=None):
 
     except FileNotFoundError:  # Gérer l'exception si le fichier PDF n'est pas trouvé
         print(f"Le fichier PDF '{name_pdf}' n'a pas été trouvé. Passage à autre chose.")
-        date = None
-        formatted_data = 'err'  # Retourner 'err' si une erreur se produit
+        date = 'date none'
+        formatted_data = 'value none'  # Retourner 'err' si une erreur se produit
         return date, formatted_data
 
 def extract_1AG1(soup, checkbox_state = False, start_date=None, end_date=None):
@@ -95,52 +96,65 @@ def extract_1AG1(soup, checkbox_state = False, start_date=None, end_date=None):
     - tuple or list: Retourne soit un tuple de (date, données formatées), soit une liste de tuples si une plage de dates est utilisée.
     """
 
-    url = 'https://www.cookson-clal.com//downloads/fr_Argent.json?_=1697614496296'
+    url = 'https://www.cookson-clal-industrie.com/prix-des-metaux/'
     
     if checkbox_state and start_date and end_date:
-        response = urlopen(url).read() # Obtenir la réponse de l'URL
-        data = json.loads(response) # Charger les données JSON
         
         extracted_values = [] # Liste pour stocker les valeurs extraites
-        for item in data:
-            if item:  # Vérifier si l'item n'est pas une liste vide
-                timestamp_ms, value = item
-                # Convertir le timestamp de millisecondes en secondes
-                timestamp_s = timestamp_ms / 1000
-                # Créer un objet datetime à partir du timestamp
-                date = datetime.fromtimestamp(timestamp_s)
-                # Formatage de la date en chaîne de caractères (vous pouvez ajuster le format comme vous le souhaitez)
-                date_str = date.strftime('%d/%m/%Y')
-                
-                # Convertir date_str en objet datetime.date
-                date_obj = datetime.strptime(date_str, '%d/%m/%Y').date()
-                
-                # Vérifier si la date du label est entre start_date et end_date
-                if start_date <= date_obj <= end_date:
-                    extracted_values.append((date_str, value))
+        current_date = start_date
+        while current_date <= end_date:
+            params = {
+                'coursday': current_date.strftime('%d'),
+                'coursmonth': current_date.strftime('%m'),
+                'coursyear': current_date.strftime('%Y'),
+            }
+            response = requests.post(url, data=params)
+            if response.status_code == 200:
+                soup = BeautifulSoup(response.text, 'html.parser')
+                tables = soup.find_all('div', class_="metal-table")
+                table = tables[0]
+                rows = table.find_all('div', class_="metal-table-item")
+                if len(rows)>3:
+                    row = rows[3]
+                    value = row.find('div', class_="table-col-5")
+                    value = value.text.strip()
+                    date = datetime.strftime(current_date, "%d/%m/%Y")
+                    print(date)
+                    print(value)
+                    formatted_data = value.replace("€", "").replace(".", ",")
+                    if formatted_data != "Non renseigné":
+                        extracted_values.append((date, formatted_data))
+            else:
+                print(f"Failed to retrieve data for {current_date.strftime('%Y-%m-%d')}")
+            
+            current_date += timedelta(days=1)
                     
         return extracted_values
     
     else:
-        table = soup.find("table")
-        rows = soup.find_all("tr")
-        fourth_row = rows[3]
+        try:
+            tables = soup.find_all("table", class_="main")
+            table = tables[3]
+            rows = table.find_all("tr", class_="lgn1")
+            row = rows[1]
+            columns = row.find_all("td")
+            last_column = columns[4]
 
-        # Trouver la quatrième colonne de la table dans la quatrième ligne
-        columns = fourth_row.find_all("td")
-        last_column = columns[3]
-
-        # Extraire la date de la première colonne du tbody
-        tbody = soup.find('tbody')
-        first_td_in_tbody = soup.find('td')
-        date_day = first_td_in_tbody.text.strip()
+            # Extraire la date de la première colonne du tbody
+            tbody = soup.find('tbody')
+            first_td_in_tbody = soup.find('td')
+            date_day = first_td_in_tbody.text.strip()
 
 
-        # Extraire le texte de la quatrième colonne
-        data = last_column.text.strip()
-        formatted_data = data.replace('€', '')
-        date = date_day.replace("Cours de Londres du ", " ")
-        return date, formatted_data # Retourner la date et la valeur formatées extraite
+            # Extraire le texte de la quatrième colonne
+            data = last_column.text.strip()
+            formatted_data = data.replace('€/kg', '').replace(".", "")
+            date = date_day.replace("Cours de Londres du ", " ")
+            return date, formatted_data # Retourner la date et la valeur formatées extraite
+        except:
+            date = 'date none'
+            formatted_data = 'value none'
+            return date, formatted_data
 
 def extract_1AG2(soup, checkbox_state = False, start_date=None, end_date=None):
     """
@@ -183,18 +197,23 @@ def extract_1AG2(soup, checkbox_state = False, start_date=None, end_date=None):
 
         return extracted_values # Retourner la liste des valeurs extraites
     else:
-        latest_prices = data[-1]
-        first_value = latest_prices['v'].pop(0)
-        data_value = latest_prices['d']
+        try:
+            latest_prices = data[-1]
+            first_value = latest_prices['v'].pop(0)
+            data_value = latest_prices['d']
 
-        date_object = datetime.strptime(data_value, '%Y-%m-%d')
-        formatted_date = date_object.strftime('%d/%m/%Y')
+            date_object = datetime.strptime(data_value, '%Y-%m-%d')
+            formatted_date = date_object.strftime('%d/%m/%Y')
 
-        data = str(first_value)
-        formatted_data = data.replace('.', ',')
-        
-        print(formatted_data)
-        return formatted_date, formatted_data # Retourner la date et la valeur formatée extraite
+            data = str(first_value)
+            formatted_data = data.replace('.', ',')
+            
+            print(formatted_data)
+            return formatted_date, formatted_data # Retourner la date et la valeur formatée extraite
+        except:
+            date = 'date none'
+            formatted_data = 'value none'
+            return date, formatted_data
 
 def extract_3AL1(soup, checkbox_state=False, start_date=None, end_date=None):
     """
@@ -260,21 +279,26 @@ def extract_3AL1(soup, checkbox_state=False, start_date=None, end_date=None):
         return extracted_values # Retourner la liste des valeurs extraites
                 
     else:
-        # Si la checkbox n'est pas cochée ou si les dates ne sont pas fournies, récupérer la première valeur
-        second_row = rows[1]
-        columns = second_row.find_all("td")
-        fourth_column = columns[1]
-        date_data_raw = columns[0].text.strip()
-        
-        # Conversion de la date et extraction des données
-        day, month_name, year = date_data_raw.replace('.', '').split()
-        month_num = months.get(month_name, '00')
-        date_data = f"{day}/{month_num}/{year}"
-        
-        data = fourth_column.text.strip()
-        formatted_data = data.replace(',', '').replace('.', ',')
-        
-        return date_data, formatted_data # Retourner la date et la valeur extraites
+        try:
+            # Si la checkbox n'est pas cochée ou si les dates ne sont pas fournies, récupérer la première valeur
+            second_row = rows[1]
+            columns = second_row.find_all("td")
+            fourth_column = columns[1]
+            date_data_raw = columns[0].text.strip()
+            
+            # Conversion de la date et extraction des données
+            day, month_name, year = date_data_raw.replace('.', '').split()
+            month_num = months.get(month_name, '00')
+            date_data = f"{day}/{month_num}/{year}"
+            
+            data = fourth_column.text.strip()
+            formatted_data = data.replace(',', '').replace('.', ',')
+            
+            return date_data, formatted_data # Retourner la date et la valeur extraites
+        except:
+            date = 'date none'
+            formatted_data = 'value none'
+            return date, formatted_data
 
 def extract_1AU2(soup, checkbox_state = False, start_date = None, end_date = None):
     """
@@ -319,19 +343,24 @@ def extract_1AU2(soup, checkbox_state = False, start_date = None, end_date = Non
         return extracted_values # Retourner la liste des valeurs extraites
 
     else:
-        # Si aucune plage de dates spécifiée, obtenir la dernière valeur
-        latest_prices = data[-1]
-        first_value = latest_prices['v'].pop(0)
-        date_value = latest_prices['d']
+        try:
+            # Si aucune plage de dates spécifiée, obtenir la dernière valeur
+            latest_prices = data[-1]
+            first_value = latest_prices['v'].pop(0)
+            date_value = latest_prices['d']
 
-        date_object = datetime.strptime(date_value, '%Y-%m-%d')
-        formatted_date = date_object.strftime('%d/%m/%Y')
+            date_object = datetime.strptime(date_value, '%Y-%m-%d')
+            formatted_date = date_object.strftime('%d/%m/%Y')
 
-        data = str(first_value)
-        formatted_data = data.replace('.', ',').replace(" ", "")
-        
-        print(formatted_data)
-        return formatted_date, formatted_data # Retourner la date et la valeur extraites
+            data = str(first_value)
+            formatted_data = data.replace('.', ',').replace(" ", "")
+            
+            print(formatted_data)
+            return formatted_date, formatted_data # Retourner la date et la valeur extraites
+        except:
+            formatted_date = 'date none'
+            formatted_data = 'value none'
+            return formatted_date, formatted_data
 
 def extract_1AU3(soup, checkbox_state = False, start_date=None, end_date=None):
     """
@@ -353,55 +382,69 @@ def extract_1AU3(soup, checkbox_state = False, start_date=None, end_date=None):
                        si une plage de dates est utilisée.
     """
 
-    url = 'https://www.cookson-clal.com//downloads/fr_Or.json?_=1697612764994'
-    
-    response = urlopen(url).read()
-    data = json.loads(response)
+    url = 'https://www.cookson-clal-industrie.com/prix-des-metaux/'
 
     if checkbox_state and start_date and end_date:
         extracted_values = []
         
-        # Parcourir chaque entrée dans les données JSON
-        for item in data:
-            if item:  # Vérifier si l'item n'est pas une liste vide
-                timestamp_ms, value = item
-                # Convertir le timestamp de millisecondes en secondes
-                timestamp_s = timestamp_ms / 1000
-                # Créer un objet datetime à partir du timestamp
-                date = datetime.fromtimestamp(timestamp_s)
-                # Formatage de la date en chaîne de caractères (vous pouvez ajuster le format comme vous le souhaitez)
-                date_str = date.strftime('%d/%m/%Y')
-                # Convertir date_str en objet datetime.date
-                date_obj = datetime.strptime(date_str, '%d/%m/%Y').date()
-                
-                # Vérifier si la date de l'entrée est dans la plage spécifiée
-                if start_date <= date_obj <= end_date:
-                    extracted_values.append((date_str, value))
-                    
+        current_date = start_date
+        while current_date <= end_date:
+            params = {
+                'coursday': current_date.strftime('%d'),
+                'coursmonth': current_date.strftime('%m'),
+                'coursyear': current_date.strftime('%Y'),
+            }
+            response = requests.post(url, data=params)
+            if response.status_code == 200:
+                soup = BeautifulSoup(response.text, 'html.parser')
+                tables = soup.find_all('div', class_="metal-table")
+                table = tables[1]
+                rows = table.find_all('div', class_="metal-table-item")
+                row = rows[1]
+                value = row.find('div', class_="table-col-5")
+                value = value.text.strip()
+                date = datetime.strftime(current_date, "%d/%m/%Y")
+                print(date)
+                print(value)
+                formatted_data = value.replace("€", "")
+                if formatted_data != "Non renseigné":
+                    extracted_values.append((date, formatted_data))
+            else:
+                print(f"Failed to retrieve data for {current_date.strftime('%Y-%m-%d')}")
+            
+            current_date += timedelta(days=1)
+            
         return extracted_values # Retourner la liste de valeurs extraites
     
     else:
-        # Si aucune plage de dates n'est spécifiée, extraire les données depuis la table HTML
-        table = soup.find("table")
-        rows = soup.find_all("tr")
-        thirth_row = rows[2]
+        try:
+            # Si aucune plage de dates n'est spécifiée, extraire les données depuis la table HTML
+            tables = soup.find_all("table", class_="main")
+            print(len(tables))
+            table = tables[4]
+            row_lgn = table.find("tr", class_='lgn1')
+            print(row_lgn)
+            # Extraire la date de la première colonne du tbody
+            tbody = soup.find('tbody')
+            first_td_in_tbody = soup.find('td')
+            date_day = first_td_in_tbody.text.strip()
 
-        # Extraire la date de la première colonne du tbody
-        tbody = soup.find('tbody')
-        first_td_in_tbody = soup.find('td')
-        date_day = first_td_in_tbody.text.strip()
+            # Trouver la quatrième colonne de la table dans la troisième ligne
+            columns = row_lgn.find_all("td")
+            data = columns[4]
+            data = data.text.strip()
+            print(data)
 
-        # Trouver la quatrième colonne de la table dans la troisième ligne
-        columns = thirth_row.find_all("td")
-        last_column = columns[3]
-
-        # Extraire le texte de la quatrième colonne
-        data = last_column.text.strip()
-        data = data.replace(" ", "")
-        formatted_data = data.replace('.', ',').replace('€', '').replace(' ', '')
-        date = date_day.replace("Cours de Londres du ", " ")
-        
-        return date, formatted_data # Retourner la date et la valeur extraites
+            # Extraire le texte de la quatrième colonne
+            data = data.replace(" ", "").replace("€/kg", "").replace(",", ".")
+            formatted_data = data.replace('.', ',').replace('€', '').replace(' ', '')
+            date = date_day.replace("Cours de Londres du ", " ")
+            
+            return date, formatted_data # Retourner la date et la valeur extraites
+        except:
+            date = 'date none'
+            formatted_data = 'value none'
+            return date, formatted_data
 
 def extract_2B16(soup, checkbox_state=False, start_date=None, end_date=None):
     """
@@ -464,21 +507,26 @@ def extract_2B16(soup, checkbox_state=False, start_date=None, end_date=None):
         return extracted_values # Retourner la liste de valeurs extraites
                 
     else:
-        # Si aucune plage de dates n'est spécifiée, récupérer la première valeur
-        second_row = rows[1]
-        columns = second_row.find_all("td")
-        thirth_column = columns[1]
-        date_data_raw = columns[0].text.strip()
-        
-        # Conversion et formatage de la date et des données
-        day, month_name, year = date_data_raw.replace('.', '').split()
-        month_num = months.get(month_name, '00')
-        date_data = f"{day}/{month_num}/{year}"
-        
-        data = thirth_column.text.strip()
-        formatted_data = data.replace(',', '').replace('.', ',')
-        
-        return date_data, formatted_data # Retourner la date et valeur extraites
+        try:
+            # Si aucune plage de dates n'est spécifiée, récupérer la première valeur
+            second_row = rows[1]
+            columns = second_row.find_all("td")
+            thirth_column = columns[1]
+            date_data_raw = columns[0].text.strip()
+            
+            # Conversion et formatage de la date et des données
+            day, month_name, year = date_data_raw.replace('.', '').split()
+            month_num = months.get(month_name, '00')
+            date_data = f"{day}/{month_num}/{year}"
+            
+            data = thirth_column.text.strip()
+            formatted_data = data.replace(',', '').replace('.', ',')
+            
+            return date_data, formatted_data # Retourner la date et valeur extraites
+        except:
+            date_data = 'date none'
+            formatted_data = 'value none'
+            return date_data, formatted_data
 
 def extract_3CU1(soup, checkbox_state=False, start_date=None, end_date=None):
     """
@@ -540,21 +588,26 @@ def extract_3CU1(soup, checkbox_state=False, start_date=None, end_date=None):
         return extracted_values # Retourner une liste de valeurs extraites
                 
     else:
-        # Si aucune plage n'est spécifiée, récupérer la première valeur
-        second_row = rows[1]
-        columns = second_row.find_all("td")
-        thirth_column = columns[1]
-        date_data_raw = columns[0].text.strip()
-        
-        # Conversion et formatage de la date et des données
-        day, month_name, year = date_data_raw.replace('.', '').split()
-        month_num = months.get(month_name, '00')
-        date_data = f"{day}/{month_num}/{year}"
-        
-        data = thirth_column.text.strip()
-        formatted_data = data.replace(',', '').replace('.', ',')
-        
-        return date_data, formatted_data # Retourner la date et valeur extraites
+        try:
+            # Si aucune plage n'est spécifiée, récupérer la première valeur
+            second_row = rows[1]
+            columns = second_row.find_all("td")
+            thirth_column = columns[1]
+            date_data_raw = columns[0].text.strip()
+            
+            # Conversion et formatage de la date et des données
+            day, month_name, year = date_data_raw.replace('.', '').split()
+            month_num = months.get(month_name, '00')
+            date_data = f"{day}/{month_num}/{year}"
+            
+            data = thirth_column.text.strip()
+            formatted_data = data.replace(',', '').replace('.', ',')
+            
+            return date_data, formatted_data # Retourner la date et valeur extraites
+        except:
+            date_data = 'date none'
+            formatted_data = 'value none'
+            return date_data, formatted_data
 
 def extract_3CU3(soup, checkbox_state = False, start_date=None, end_date=None):
     """
@@ -617,21 +670,26 @@ def extract_3CU3(soup, checkbox_state = False, start_date=None, end_date=None):
         return extracted_values # Retourner la liste des données extraites
                 
     else:
-        # Si aucune plage n'est spécifiée, récupérer la première valeur
-        second_row = rows[1]
-        columns = second_row.find_all("td")
-        second_column = columns[1]
-        date_data_raw = columns[0].text.strip()
-        
-        # Conversion et formatage de la date et des données
-        day, month_name, year = date_data_raw.replace('.', '').split()
-        month_num = months.get(month_name, '00')
-        date_data = f"{day}/{month_num}/{year}"
-        
-        data = second_column.text.strip()
-        formatted_data = data.replace(',', '').replace('.', ',')
-        
-        return date_data, formatted_data # Retourner la date et valeur extraites
+        try:
+            # Si aucune plage n'est spécifiée, récupérer la première valeur
+            second_row = rows[1]
+            columns = second_row.find_all("td")
+            second_column = columns[1]
+            date_data_raw = columns[0].text.strip()
+            
+            # Conversion et formatage de la date et des données
+            day, month_name, year = date_data_raw.replace('.', '').split()
+            month_num = months.get(month_name, '00')
+            date_data = f"{day}/{month_num}/{year}"
+            
+            data = second_column.text.strip()
+            formatted_data = data.replace(',', '').replace('.', ',')
+            
+            return date_data, formatted_data # Retourner la date et valeur extraites
+        except:
+            date_data = 'date none'
+            formatted_data = 'value none'
+            return date_data, formatted_data
 
 def extract_2CUB(soup, checkbox_state = False, start_date=None, end_date=None):
     """
@@ -698,8 +756,8 @@ def extract_2CUB(soup, checkbox_state = False, start_date=None, end_date=None):
             
     except FileNotFoundError:
         print(f"Le fichier PDF '{name_pdf}' n'a pas été trouvé. Passage à autre chose.")
-        date = None
-        formatted_data = 'err'
+        date = 'date none'
+        formatted_data = 'value none'
         return date, formatted_data
 
 def extract_2M30(soup, checkbox_state = False, start_date=None, end_date=None):
@@ -756,33 +814,38 @@ def extract_2M30(soup, checkbox_state = False, start_date=None, end_date=None):
                         
 
     else:
-        table = soup.find('table', class_='metalinfo-table')
-        # Trouver toutes les lignes (tr) à l'intérieur de cette table
-        rows = soup.find_all('tr')
-        second_row = rows[23]
-
-        # Trouver toutes les colonnes (td) de la ligne spécifiée
-        columns = second_row.find_all('td')
-        second_column = columns[1]
-        data = second_column.text.strip()
-        formatted_data = data.replace(',', '').replace('.', ',')
-        # Trouver la date dans le tag <p class="date small">
-        date_tag = soup.find("p", class_="date small")
-        raw_date_data = date_tag.text.strip() if date_tag else "Date not found"
-
-        # Convertir la date au format souhaité
-        locale.setlocale(locale.LC_TIME, "en_US.UTF-8")
         try:
-            # Supprimer "Value from " pour obtenir seulement la date
-            clean_date_data = raw_date_data.replace("Value from ", "").strip()
-            print(f'clean data : "{clean_date_data}"')
-            # Convertir la chaîne de date au format souhaité
-            datetime_obj = datetime.strptime(clean_date_data, '%b %d, %Y')
-            formatted_date = datetime_obj.strftime('%d/%m/%Y')
-        except ValueError:
-            formatted_date = "Invalid date format"
+            table = soup.find('table', class_='metalinfo-table')
+            # Trouver toutes les lignes (tr) à l'intérieur de cette table
+            rows = soup.find_all('tr')
+            second_row = rows[23]
 
-        return formatted_date, formatted_data # Retourner la date et valeur extraites
+            # Trouver toutes les colonnes (td) de la ligne spécifiée
+            columns = second_row.find_all('td')
+            second_column = columns[1]
+            data = second_column.text.strip()
+            formatted_data = data.replace(',', '').replace('.', ',')
+            # Trouver la date dans le tag <p class="date small">
+            date_tag = soup.find("p", class_="date small")
+            raw_date_data = date_tag.text.strip() if date_tag else "Date not found"
+
+            # Convertir la date au format souhaité
+            locale.setlocale(locale.LC_TIME, "en_US.UTF-8")
+            try:
+                # Supprimer "Value from " pour obtenir seulement la date
+                clean_date_data = raw_date_data.replace("Value from ", "").strip()
+                print(f'clean data : "{clean_date_data}"')
+                # Convertir la chaîne de date au format souhaité
+                datetime_obj = datetime.strptime(clean_date_data, '%b %d, %Y')
+                formatted_date = datetime_obj.strftime('%d/%m/%Y')
+            except ValueError:
+                formatted_date = "Invalid date format"
+
+            return formatted_date, formatted_data # Retourner la date et valeur extraites
+        except:
+            formatted_date = 'date none'
+            formatted_data = 'value none'
+            return formatted_date, formatted_data
 
 def extract_2M37(soup, checkbox_state = False, start_date=None, end_date=None):
     """
@@ -842,21 +905,26 @@ def extract_2M37(soup, checkbox_state = False, start_date=None, end_date=None):
         return extracted_values # Retourner la liste de données extraites
                 
     else:
-        # Si aucune plage n'est spécifiée, récupérer la première valeur
-        second_row = rows[1]
-        columns = second_row.find_all("td")
-        second_column = columns[1]
-        date_data_raw = columns[0].text.strip()
-        
-        # Conversion de la date et extraction des données
-        day, month_name, year = date_data_raw.replace('.', '').split()
-        month_num = months.get(month_name, '00')
-        date_data = f"{day}/{month_num}/{year}"
-        
-        data = second_column.text.strip()
-        formatted_data = data.replace(',', '').replace('.', ',')
-        
-        return date_data, formatted_data # Retourner la date et valeur extraites
+        try:
+            # Si aucune plage n'est spécifiée, récupérer la première valeur
+            second_row = rows[1]
+            columns = second_row.find_all("td")
+            second_column = columns[1]
+            date_data_raw = columns[0].text.strip()
+            
+            # Conversion de la date et extraction des données
+            day, month_name, year = date_data_raw.replace('.', '').split()
+            month_num = months.get(month_name, '00')
+            date_data = f"{day}/{month_num}/{year}"
+            
+            data = second_column.text.strip()
+            formatted_data = data.replace(',', '').replace('.', ',')
+            
+            return date_data, formatted_data # Retourner la date et valeur extraites
+        except:
+            date_data = 'date none'
+            formatted_data = 'value none'
+            return date_data, formatted_data
 
 def extract_3NI1(soup, checkbox_state = False, start_date=None, end_date=None):
     """
@@ -902,7 +970,7 @@ def extract_3NI1(soup, checkbox_state = False, start_date=None, end_date=None):
                     date_data_obj = date_obj.date()
                     
                     if start_date <= date_data_obj <= end_date:
-                        value_data = columns[1].text.strip().replace(',', '').replace('.', ',')
+                        value_data = columns[1].text.strip().replace('.', '')
                         extracted_values.append((date_obj.strftime('%d/%m/%Y'), value_data))
                 except ValueError as e:
                     print(f"Erreur lors de la conversion de la date: {e}")
@@ -910,47 +978,52 @@ def extract_3NI1(soup, checkbox_state = False, start_date=None, end_date=None):
         return extracted_values # Retourner la liste des données extraites
 
     else:
-        tables = soup.find_all('table', class_='table table-condensed table-hover table-striped')
-        rows = tables[1].find_all("tr")
-    # S'assurer qu'il y a au moins deux tables et sélectionner la deuxième
-        if len(tables) > 1:
-            table = tables[1]
-            
-            # Obtenir la table qui contient les données voulues
-            first_table = table.find('table', class_='table table-condensed table-hover table-striped')
-            # Obtenir la première ligne de la table (en excluant l'en-tête)
-            last_row = first_table.find_all('tr')[-1] if table else None
-            print(last_row)
-            if last_row:
-                columns = last_row.find_all('td')
-                print(columns)
-                # S'assurer qu'il y a au moins deux colonnes
-                if len(columns) >= 2:
-                    # Extraire et nettoyer la date et la valeur
-                    date_str = columns[0].text.strip()
-                    print(f"DATE :", date_str)
-                    value_str = columns[1].text.strip()
-                    print(f"VALUE :", value_str)
-                    
-                    # Convertir la date au format d/m/Y
-                    try:
-                        date_obj = datetime.strptime(date_str, '%d.%m.%Y')
-                        formatted_date = date_obj.strftime('%d/%m/%Y')
-                    except ValueError:
-                        print(f"Erreur de format de date : {date_str}")
-                        formatted_date = date_str  # Garder la date telle quelle si la conversion échoue
-                    print(formatted_date, value_str)
-                    
-                    return formatted_date, value_str # Retourner la date et valeur extraites
+        try:
+            tables = soup.find_all('table', class_='table table-condensed table-hover table-striped')
+            rows = tables[1].find_all("tr")
+        # S'assurer qu'il y a au moins deux tables et sélectionner la deuxième
+            if len(tables) > 1:
+                table = tables[1]
+                
+                # Obtenir la table qui contient les données voulues
+                first_table = table.find('table', class_='table table-condensed table-hover table-striped')
+                # Obtenir la première ligne de la table (en excluant l'en-tête)
+                last_row = first_table.find_all('tr')[-1] if table else None
+                print(last_row)
+                if last_row:
+                    columns = last_row.find_all('td')
+                    print(columns)
+                    # S'assurer qu'il y a au moins deux colonnes
+                    if len(columns) >= 2:
+                        # Extraire et nettoyer la date et la valeur
+                        date_str = columns[0].text.strip()
+                        print(f"DATE :", date_str)
+                        value_str = columns[1].text.strip().replace('.', '')
+                        print(f"VALUE :", value_str)
+                        
+                        # Convertir la date au format d/m/Y
+                        try:
+                            date_obj = datetime.strptime(date_str, '%d.%m.%Y')
+                            formatted_date = date_obj.strftime('%d/%m/%Y')
+                        except ValueError:
+                            print(f"Erreur de format de date : {date_str}")
+                            formatted_date = date_str  # Garder la date telle quelle si la conversion échoue
+                        print(formatted_date, value_str)
+                        
+                        return formatted_date, value_str # Retourner la date et valeur extraites
+                    else:
+                        print("Les colonnes de date et de valeur sont manquantes.")
+                        return None, None
                 else:
-                    print("Les colonnes de date et de valeur sont manquantes.")
+                    print("Aucune ligne de données trouvée dans la table.")
                     return None, None
             else:
-                print("Aucune ligne de données trouvée dans la table.")
+                print("La deuxième table est introuvable.")
                 return None, None
-        else:
-            print("La deuxième table est introuvable.")
-            return None, None
+        except:
+            formatted_date = 'date none'
+            formatted_data = 'value none'
+            return formatted_date, formatted_data
 
 def extract_3SN1(soup, checkbox_state = None, start_date=None, end_date=None):
     """
@@ -1005,47 +1078,52 @@ def extract_3SN1(soup, checkbox_state = None, start_date=None, end_date=None):
         return extracted_values
 
     else:
-        tables = soup.find_all('table', class_='table table-condensed table-hover table-striped')
-        rows = tables[1].find_all("tr")
-    # S'assurer qu'il y a au moins deux tables et sélectionner la deuxième
-        if len(tables) > 1:
-            table = tables[1]
-            
-            # Obtenir la table qui contient les données voulues
-            first_table = table.find('table', class_='table table-condensed table-hover table-striped')
-            # Obtenir la première ligne de la table (en excluant l'en-tête)
-            last_row = first_table.find_all('tr')[-1] if table else None
-            print(last_row)
-            if last_row:
-                columns = last_row.find_all('td')
-                print(columns)
-                # S'assurer qu'il y a au moins deux colonnes
-                if len(columns) >= 2:
-                    # Extraire et nettoyer la date et la valeur
-                    date_str = columns[0].text.strip()
-                    print(f"DATE :", date_str)
-                    value_str = columns[1].text.strip()
-                    print(f"VALUE :", value_str)
-                    
-                    # Convertir la date au format d/m/Y
-                    try:
-                        date_obj = datetime.strptime(date_str, '%d.%m.%Y')
-                        formatted_date = date_obj.strftime('%d/%m/%Y')
-                    except ValueError:
-                        print(f"Erreur de format de date : {date_str}")
-                        formatted_date = date_str  # Garder la date telle quelle si la conversion échoue
+        try:
+            tables = soup.find_all('table', class_='table table-condensed table-hover table-striped')
+            rows = tables[1].find_all("tr")
+        # S'assurer qu'il y a au moins deux tables et sélectionner la deuxième
+            if len(tables) > 1:
+                table = tables[1]
+                
+                # Obtenir la table qui contient les données voulues
+                first_table = table.find('table', class_='table table-condensed table-hover table-striped')
+                # Obtenir la première ligne de la table (en excluant l'en-tête)
+                last_row = first_table.find_all('tr')[-1] if table else None
+                print(last_row)
+                if last_row:
+                    columns = last_row.find_all('td')
+                    print(columns)
+                    # S'assurer qu'il y a au moins deux colonnes
+                    if len(columns) >= 2:
+                        # Extraire et nettoyer la date et la valeur
+                        date_str = columns[0].text.strip()
+                        print(f"DATE :", date_str)
+                        value_str = columns[1].text.strip().replace('.', '')
+                        print(f"VALUE :", value_str)
                         
-                    print(formatted_date, value_str)
-                    return formatted_date, value_str # Retourner la date et valeur extraites
+                        # Convertir la date au format d/m/Y
+                        try:
+                            date_obj = datetime.strptime(date_str, '%d.%m.%Y')
+                            formatted_date = date_obj.strftime('%d/%m/%Y')
+                        except ValueError:
+                            print(f"Erreur de format de date : {date_str}")
+                            formatted_date = date_str  # Garder la date telle quelle si la conversion échoue
+                            
+                        print(formatted_date, value_str)
+                        return formatted_date, value_str # Retourner la date et valeur extraites
+                    else:
+                        print("Les colonnes de date et de valeur sont manquantes.")
+                        return None, None
                 else:
-                    print("Les colonnes de date et de valeur sont manquantes.")
+                    print("Aucune ligne de données trouvée dans la table.")
                     return None, None
             else:
-                print("Aucune ligne de données trouvée dans la table.")
+                print("La deuxième table est introuvable.")
                 return None, None
-        else:
-            print("La deuxième table est introuvable.")
-            return None, None
+        except:
+            formatted_date = 'date none'
+            formatted_data = 'value none'
+            return formatted_date, formatted_data
 
 def extract_3ZN1(soup, checkbox_state=False, start_date=None, end_date=None):
     """
@@ -1106,23 +1184,28 @@ def extract_3ZN1(soup, checkbox_state=False, start_date=None, end_date=None):
         return extracted_values # Retourner la liste de données extraites
                 
     else:
-        table = soup.find("table")
-        rows = soup.find_all("tr")
-        # Si aucune plage n'est spécifiée, récupérer la première valeur
-        second_row = rows[1]
-        columns = second_row.find_all("td")
-        second_column = columns[1]
-        date_data_raw = columns[0].text.strip()
-        
-        # Conversion de la date et extraction des données
-        day, month_name, year = date_data_raw.replace('.', '').split()
-        month_num = months.get(month_name, '00')
-        date_data = f"{day}/{month_num}/{year}"
-        
-        data = second_column.text.strip()
-        formatted_data = data.replace(',', '').replace('.', ',')
-        
-        return date_data, formatted_data # Retourner la date et valeur extraites
+        try:
+            table = soup.find("table")
+            rows = soup.find_all("tr")
+            # Si aucune plage n'est spécifiée, récupérer la première valeur
+            second_row = rows[1]
+            columns = second_row.find_all("td")
+            second_column = columns[1]
+            date_data_raw = columns[0].text.strip()
+            
+            # Conversion de la date et extraction des données
+            day, month_name, year = date_data_raw.replace('.', '').split()
+            month_num = months.get(month_name, '00')
+            date_data = f"{day}/{month_num}/{year}"
+            
+            data = second_column.text.strip()
+            formatted_data = data.replace(',', '').replace('.', ',')
+            
+            return date_data, formatted_data # Retourner la date et valeur extraites
+        except:
+            date_data = 'date none'
+            formatted_data = 'value none'
+            return date_data, formatted_data
 
 
 # Extraction données pour 1AG3 (EL) Deja importé
