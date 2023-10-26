@@ -108,7 +108,7 @@ def extract_1AG1(soup, checkbox_state = False, start_date=None, end_date=None):
                 'coursmonth': current_date.strftime('%m'),
                 'coursyear': current_date.strftime('%Y'),
             }
-            response = requests.post(url, data=params)
+            response = requests.post(url, data=params, verify=False)
             if response.status_code == 200:
                 soup = BeautifulSoup(response.text, 'html.parser')
                 tables = soup.find_all('div', class_="metal-table")
@@ -394,7 +394,7 @@ def extract_1AU3(soup, checkbox_state = False, start_date=None, end_date=None):
                 'coursmonth': current_date.strftime('%m'),
                 'coursyear': current_date.strftime('%Y'),
             }
-            response = requests.post(url, data=params)
+            response = requests.post(url, data=params, verify=False)
             if response.status_code == 200:
                 soup = BeautifulSoup(response.text, 'html.parser')
                 tables = soup.find_all('div', class_="metal-table")
