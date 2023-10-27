@@ -4,7 +4,7 @@ import configparser
 from bs4 import BeautifulSoup
 import requests
 from requests.exceptions import RequestException
-from .config import get_config_value, get_pdf_path, set_config_value
+from .config import get_config_value, get_pdf_path, set_config_value, get_config_path
 from .data_list import sites
 import app.utils_scrapping as scrapping
 from .utils_pdf import download_pdf, delete_pdfs
@@ -31,8 +31,11 @@ from PyQt5.QtWidgets import QApplication
 from PyQt5.QtCore import QTimer
 from PyQt5 import QtWidgets, QtCore
 
+# Chemin absolu vers config.ini basé sur l'emplacement de votre script
+config_path = get_config_path()
+print(config_path)
 config = configparser.ConfigParser()
-config.read('config.ini')
+config.read(config_path)
 locale.setlocale(locale.LC_ALL, 'fr_FR.UTF-8')
 now = datetime.datetime.now().date()
 yesterday = now - timedelta(days=1)
@@ -123,8 +126,8 @@ def get_french_holidays(year):
 
 # Lire le chemin du fichier à partir du fichier config.ini
 config = configparser.ConfigParser()
-if os.path.exists('config.ini'):
-    config.read('config.ini')
+if os.path.exists(config_path):
+    config.read(config_path)
     default_path_excel = config.get('SETTINGS', 'excel_path', fallback="")
     default_path_pdf = config.get('SETTINGS', 'pdf_path', fallback="")
     default_path_pdf_name = config.get('SETTINGS', 'name_pdf', fallback="")
@@ -261,7 +264,7 @@ class MyApp(QtWidgets.QWidget):
         
         selected_functions_str = ",".join(self.selected_scrapping_functions)
         self.config.set('SETTINGS', 'selected_functions', selected_functions_str)
-        with open('config.ini', 'w') as configfile:
+        with open(config_path, 'w') as configfile:
             self.config.write(configfile)
 
     def load_selected_functions(self):
@@ -289,7 +292,7 @@ class MyApp(QtWidgets.QWidget):
         self.layout.addWidget(self.select_scrapping_functions_button)
 
         self.config = configparser.ConfigParser()
-        self.config.read('config.ini')
+        self.config.read(config_path)
         self.load_selected_functions()
         auto_start = self.config.getboolean('SETTINGS', 'auto_start', fallback=False)
         self.param1_checkbox.setChecked(auto_start)
@@ -482,7 +485,7 @@ class MyApp(QtWidgets.QWidget):
             self.run_button.setEnabled(True) # Activer le bouton si tout est correct
 
     def saveSettings(self):
-        self.config.read('config.ini') # Lire le fichier de configuration
+        self.config.read(config_path) # Lire le fichier de configuration
     
         # Ajouter ou mettre à jour une section et une clé spécifique
         if not self.config.has_section('SETTINGS'):
@@ -490,7 +493,7 @@ class MyApp(QtWidgets.QWidget):
         self.config.set('SETTINGS', 'auto_start', str(self.param1_checkbox.isChecked()))
         
         # Sauvegarder les modifications dans le fichier de configuration
-        with open('config.ini', 'w') as configfile:
+        with open(config_path, 'w') as configfile:
             self.config.write(configfile)
 
     def modify_path_excel(self):
@@ -501,11 +504,11 @@ class MyApp(QtWidgets.QWidget):
         if path: # Si un chemin est sélectionné
             self.path_excel.setText(path)
             # Lire, modifier et sauvegarder le fichier de configuration
-            config.read('config.ini')
+            config.read(config_path)
             if not config.has_section('SETTINGS'):
                 config.add_section('SETTINGS')
             config.set('SETTINGS', 'excel_path', path)
-            with open('config.ini', 'w') as configfile:
+            with open(config_path, 'w') as configfile:
                 config.write(configfile)
             self.log('Chemin modifié.') # Loguer que le chemin a été modifié
     
@@ -516,11 +519,11 @@ class MyApp(QtWidgets.QWidget):
         if path: # Si un chemin est sélectionné
             self.path_pdf.setText(path)
             # Lire, modifier et sauvegarder le fichier de configuration
-            config.read('config.ini')
+            config.read(config_path)
             if not config.has_section('SETTINGS'):
                 config.add_section('SETTINGS')
             config.set('SETTINGS', 'pdf_path', path)
-            with open('config.ini', 'w') as configfile:
+            with open(config_path, 'w') as configfile:
                 config.write(configfile)
             self.log('Chemin modifié.') # Loguer que le chemin a été modifié
             if not self.restart_app():
@@ -538,13 +541,13 @@ class MyApp(QtWidgets.QWidget):
             self.path_namepdf.setText(new_name) # Mettre à jour le nom affiché 
             
             # Lire et modifier le fichier de configuration pour réfléter le nouveau nom
-            config.read('config.ini')
+            config.read(config_path)
             if not config.has_section('SETTINGS'):
                 config.add_section('SETTINGS')
             config.set('SETTINGS', 'name_pdf', new_name)
             
             # Sauvegarder les modifications dans le fichier de configuration
-            with open('config.ini', 'w') as configfile:
+            with open(config_path, 'w') as configfile:
                 config.write(configfile)
             
             self.log('Nom modifié.') # Loguer lorsque le nom est modifié
