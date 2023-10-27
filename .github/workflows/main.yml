@@ -26,7 +26,7 @@ jobs:
 
     - name: Create Executable
       run: |
-        pyinstaller -y -w --add-data "version.json;." --add-data "generate_appcast.py;." --add-data "config.ini;." --add-data "theme.qss;." --add-data "winsparkle_wrapper.py;." --add-data "LICENSE.md;." --add-data "README.md;." --add-data "requirements.txt;." --add-data "WinSparkle.dll;." --paths "app" --paths "resources" --paths ".github" main.py
+        pyinstaller -y -w --add-data "version.json;." --add-binary "C:\Users\adrie\AppData\Local\Programs\Python\Python312\python312.dll;." --add-data "generate_appcast.py;." --add-data "config.ini;." --add-data "theme.qss;." --add-data "winsparkle_wrapper.py;." --add-data "LICENSE.md;." --add-data "README.md;." --add-data "requirements.txt;." --add-data "WinSparkle.dll;." --paths "app" --paths "resources" --paths ".github" main.py
 
     - name: Zip the Executable Directory
       run: |
