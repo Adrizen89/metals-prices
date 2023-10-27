@@ -6,11 +6,7 @@
 <h3>◦ Développé en Python.</h3>
 
 <p align="center">
-<img src="https://img.shields.io/badge/HTML5-E34F26.svg?style&logo=HTML5&logoColor=white" alt="HTML5" />
-<img src="https://img.shields.io/badge/Apache-D22128.svg?style&logo=Apache&logoColor=white" alt="Apache" />
-<img src="https://img.shields.io/badge/PowerShell-5391FE.svg?style&logo=PowerShell&logoColor=white" alt="PowerShell" />
 <img src="https://img.shields.io/badge/Python-3776AB.svg?style&logo=Python&logoColor=white" alt="Python" />
-<img src="https://img.shields.io/badge/Markdown-000000.svg?style&logo=Markdown&logoColor=white" alt="Markdown" />
 </p>
 <img src="https://img.shields.io/github/license/Adrizen89/metals-prices?style&color=5D6D7E" alt="GitHub license" />
 <img src="https://img.shields.io/github/last-commit/Adrizen89/metals-prices?style&color=5D6D7E" alt="git-last-commit" />

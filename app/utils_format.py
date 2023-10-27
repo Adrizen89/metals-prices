@@ -24,25 +24,6 @@ def check_and_return_value(value, sheet, format_func, txterr, site, data, replac
     return value, txterr, replaced, replaced_values
 
 
-    # try:
-        
-    #     # valueformat = valueformat
-    #     # valueformat = value.replace('.', ',')
-    #     float(valueformat)
-    #     txterr = f"Valeur pour le site {site['name']} : {data}, {valueformat}"
-
-
-    # except ValueError:
-    #     last_row = sheet.max_row
-    #     value = sheet.cell(row=last_row, column=2).value
-    #     txterr = f"Remplacement pour {site['name']} : {value} , {valueformat}"
-    #     replaced = True
-    #     replaced_values[site['name']] = value
-
-
-    # return value, txterr, replaced, replaced_values
-
-
 def format_value_1AG1(value):
     return value.replace('.', ',')
 

@@ -695,15 +695,25 @@ class MyApp(QtWidgets.QWidget):
                     # Si plage de dates n'est pas cochée, écrire seulement la première paire de données extraites dans la feuille Excel
                     date_day, data = extracted_data
                     row_number = sheet.max_row + 1
-                    sheet.cell(row=row_number, column=1, value=date_day)
+                    if date_day == 'date none' and data == 'value none':
+                        # Récupérez la date et la valeur de la ligne précédente
+                        prev_date = sheet.cell(row=row_number - 1, column=1).value
+                        prev_value = sheet.cell(row=row_number - 1, column=2).value
+                        print(f"prev value {prev_value}")
+                        sheet.cell(row=row_number, column=1, value=prev_date)
+                        sheet.cell(row=row_number, column=2, value=prev_value)
+                        replaced_value_count += 1
+                        replaced_values[f"Rate {site['name']}"] = f'Date: {prev_date}, Value: {prev_value}'
+                    else: 
+                        sheet.cell(row=row_number, column=1, value=date_day)
                     
-                    # Vérifier les jours fériés et écrire la valeur appropriée dans la feuille Excel
-                    if site['cal'] == 'fr' and date_day not in holidays_french:
-                        sheet.cell(row=row_number, column=2, value=data)
-                    elif site['cal'] == 'uk' and date_day not in holidays_uk:
-                        sheet.cell(row=row_number, column=2, value=data)
-                    else:
-                        sheet.cell(row=row_number, column=2, value="Jour non valeur")
+                        # Vérifier les jours fériés et écrire la valeur appropriée dans la feuille Excel
+                        if site['cal'] == 'fr' and date_day not in holidays_french:
+                            sheet.cell(row=row_number, column=2, value=data)
+                        elif site['cal'] == 'uk' and date_day not in holidays_uk:
+                            sheet.cell(row=row_number, column=2, value=data)
+                        else:
+                            sheet.cell(row=row_number, column=2, value="Jour non valeur")
 
                     sheet.cell(row=row_number, column=3, value=site['devise'])
                     sheet.cell(row=row_number, column=4, value=site['unit'])
@@ -715,12 +725,20 @@ class MyApp(QtWidgets.QWidget):
                         rpa_row_number = rpa_sheet.max_row + 1
                         rpa_sheet.cell(row=rpa_row_number, column=1, value=site['metal'])
                         rpa_sheet.cell(row=rpa_row_number, column=2, value=site['name'])
-                        if site['cal'] == 'fr' and not yesterday_holiday in holidays_french:
-                            rpa_sheet.cell(row=rpa_row_number, column=3, value=data)
-                        elif site['cal'] == 'uk' and not yesterday_holiday in holidays_uk:
-                            rpa_sheet.cell(row=rpa_row_number, column=3, value=data)
+                        
+                        data_sheet = wb[site['name']]
+                        if date_day == 'date none' and data == 'value none':
+                            prev_date = data_sheet.cell(row=rpa_row_number - 1, column=1).value
+                            prev_value = data_sheet.cell(row=rpa_row_number - 1, column=2).value
+
+                            rpa_sheet.cell(row=rpa_row_number, column=3, value=prev_value)
                         else:
-                            rpa_sheet.cell(row=rpa_row_number, column=3, value="Jour non valeur")
+                            if site['cal'] == 'fr' and not yesterday_holiday in holidays_french:
+                                rpa_sheet.cell(row=rpa_row_number, column=3, value=data)
+                            elif site['cal'] == 'uk' and not yesterday_holiday in holidays_uk:
+                                rpa_sheet.cell(row=rpa_row_number, column=3, value=data)
+                            else:
+                                rpa_sheet.cell(row=rpa_row_number, column=3, value="Jour non valeur")
                         rpa_sheet.cell(row=rpa_row_number, column=4, value=site['devise'])
                         rpa_sheet.cell(row=rpa_row_number, column=5, value=site['unit'])
                 
