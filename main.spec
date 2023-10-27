@@ -4,7 +4,6 @@
 a = Analysis(
     ['main.py'],
     pathex=['app', 'resources', '.github'],
-    binaries=[('C:\\Users\\adrie\\AppData\\Local\\Programs\\Python\\Python312\\python312.dll', '.')],
     binaries=[],
     datas=[('version.json', '.'), ('generate_appcast.py', '.'), ('config.ini', '.'), ('theme.qss', '.'), ('winsparkle_wrapper.py', '.'), ('LICENSE.md', '.'), ('README.md', '.'), ('requirements.txt', '.'), ('WinSparkle.dll', '.')],
     hiddenimports=[],
@@ -36,7 +35,6 @@ exe = EXE(
 coll = COLLECT(
     exe,
     a.binaries,
-    a.zipfiles,
     a.datas,
     strip=False,
     upx=True,
