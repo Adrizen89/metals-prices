@@ -1,25 +1,20 @@
 # -*- mode: python ; coding: utf-8 -*-
 
 
-block_cipher = None
-
-
 a = Analysis(
     ['main.py'],
     pathex=['app', 'resources', '.github'],
     binaries=[('C:\\Users\\adrie\\AppData\\Local\\Programs\\Python\\Python312\\python312.dll', '.')],
+    binaries=[],
     datas=[('version.json', '.'), ('generate_appcast.py', '.'), ('config.ini', '.'), ('theme.qss', '.'), ('winsparkle_wrapper.py', '.'), ('LICENSE.md', '.'), ('README.md', '.'), ('requirements.txt', '.'), ('WinSparkle.dll', '.')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
     excludes=[],
-    win_no_prefer_redirects=False,
-    win_private_assemblies=False,
-    cipher=block_cipher,
     noarchive=False,
 )
-pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
+pyz = PYZ(a.pure)
 
 exe = EXE(
     pyz,
