@@ -26,7 +26,11 @@ jobs:
 
     - name: Create Executable
       run: |
-        pyinstaller -y --onefile -w --add-data "version.json;." --add-data "config.ini;." --add-data "theme.qss;." --paths "app" --paths "resources" main.py
+        pyinstaller -y -w --add-data "version.json;." --add-data "generate_appcast.py;." --add-data "config.ini;." --add-data "theme.qss;." --add-data "winsparkle_wrapper.py;." --add-data "LICENSE.md;." --add-data "README.md;." --add-data "requirements.txt;." --add-data "WinSparkle.dll;." --paths "app" --paths "resources" --paths ".github" main.py
+
+    - name: Zip the Executable Directory
+      run: |
+        Compress-Archive -Path dist/main -DestinationPath dist/main.zip
 
     - name: Bump version and push tag
       id: create_tag
@@ -54,9 +58,9 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./dist/main.exe
-        asset_name: main.exe
-        asset_content_type: application/octet-stream
+        asset_path: ./dist/main.zip
+        asset_name: main.zip
+        asset_content_type: application/zip
 
     - name: Update JSON
       run: |
@@ -80,6 +84,6 @@ jobs:
       run: |
        git config --local user.email "action@github.com"
        git config --local user.name "GitHub Action"
-       git add appcast.xml  # Supposons que appcast.xml est le fichier généré
+       git add docs/appcast.xml  # Supposons que appcast.xml est le fichier généré
        git commit -m "Update Appcast XML for new release" -a
        git push
