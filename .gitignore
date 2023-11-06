@@ -1,4 +1,4 @@
 .mon_env
-.dist
+.dist/
 .main
-.build
+.build/
