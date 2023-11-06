@@ -91,7 +91,6 @@ def get_uk_holidays(year):
     
     return holidays_uk_formatted
 
-
 def get_french_holidays(year):
     # Jours fériés fixes
     holidays_french = [
