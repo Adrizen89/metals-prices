@@ -7,6 +7,7 @@ from PyQt5 import QtWidgets
 import os
 import locale
 import winsparkle_wrapper
+from generate_appcast import generate_appcast as appcast
 
 def load_stylesheet(qss_file_path: str) -> str:
     """Load the QSS file and return the stylesheet content."""
@@ -26,6 +27,7 @@ def main():
     stylesheet = load_stylesheet(qss_file_path)
     app.setStyleSheet(stylesheet)
     myApp = MyApp()
+    appcast()
     sys.exit(app.exec_())
     
     # Clean WinSparkle
@@ -33,3 +35,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    

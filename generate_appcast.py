@@ -5,6 +5,7 @@ def generate_appcast():
     # Lire le fichier version.json
     with open('version.json', 'r') as f:
         version_info = json.load(f)
+        print('version lu')
 
     version = version_info['version']
     url = version_info['url']  # Assurez-vous que cette URL pointe vers l'exécutable dans les assets de release
