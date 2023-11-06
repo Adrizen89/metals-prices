@@ -27,7 +27,6 @@ def main():
     stylesheet = load_stylesheet(qss_file_path)
     app.setStyleSheet(stylesheet)
     myApp = MyApp()
-    appcast()
     sys.exit(app.exec_())
     
     # Clean WinSparkle

@@ -19,7 +19,7 @@ def generate_appcast():
     """
 
     # Écrire le fichier Appcast XML
-    with open('appcast.xml', 'w') as f:
+    with open('docs/appcast.xml', 'w') as f:
         f.write(appcast_xml)
 
 if __name__ == "__main__":
