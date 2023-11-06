@@ -1,6 +1,16 @@
-
-    <item>
-        <title>Version v6.0.32</title>
-        <sparkle:version>v6.0.32</sparkle:version>
-        <enclosure url="https://github.com/Adrizen89/metals-prices/releases/download/v6.0.32/main.exe" sparkle:version="v6.0.32" type="application/octet-stream" />
-    </item>
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <channel>
+        <title>Votre application Updates</title>
+        <link>https://github.com/Adrizen89/metals-prices/releases/download/v6.0.33/main.exe</link>
+        <description>Les mises à jour les plus récentes pour Votre application.</description>
+        <language>fr</language>
+        <item>
+            <title>Version v6.0.33</title>
+            <enclosure url="https://github.com/Adrizen89/metals-prices/releases/download/v6.0.33/main.exe"
+                       sparkle:version="v6.0.33"
+                       sparkle:shortVersionString="v6.0.33"
+                       type="application/octet-stream"/>
+        </item>
+    </channel>
+</rss>
