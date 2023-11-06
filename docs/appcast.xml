@@ -1,7 +1,7 @@
 
     <item>
-        <title>Version v6.0.31</title>
-        <sparkle:version>v6.0.31</sparkle:version>
-        <enclosure url="https://github.com/Adrizen89/metals-prices/releases/download/v6.0.31/main.exe" sparkle:version="v6.0.31" type="application/octet-stream" />
+        <title>Version v6.0.32</title>
+        <sparkle:version>v6.0.32</sparkle:version>
+        <enclosure url="https://github.com/Adrizen89/metals-prices/releases/download/v6.0.32/main.exe" sparkle:version="v6.0.32" type="application/octet-stream" />
     </item>
     
