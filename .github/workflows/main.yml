@@ -18,6 +18,9 @@ jobs:
       with:
         python-version: '3.12'
 
+    - name: Define Python DLL path
+      run: echo "PYTHON_DLL_PATH=$(python -c "import os; import sys; print(os.path.dirname(sys.executable))")" >> $GITHUB_ENV
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -26,7 +29,7 @@ jobs:
 
     - name: Create Executable
       run: |
-        pyinstaller -y -w --add-data "version.json;." --add-data "generate_appcast.py;." --add-data "config.ini;." --add-data "theme.qss;." --add-data "winsparkle_wrapper.py;." --add-data "LICENSE.md;." --add-data "README.md;." --add-data "requirements.txt;." --add-data "WinSparkle.dll;." --paths "app" --paths "resources" --paths ".github" main.py
+        pyinstaller -y -w --add-binary "$PYTHON_DLL_PATH/python312.dll;." --add-data "version.json;." --add-data "generate_appcast.py;." --add-data "config.ini;." --add-data "theme.qss;." --add-data "winsparkle_wrapper.py;." --add-data "LICENSE.md;." --add-data "README.md;." --add-data "requirements.txt;." --add-data "WinSparkle.dll;." --paths "app" --paths "resources" --paths ".github" main.py
 
     - name: Zip the Executable Directory
       run: |
