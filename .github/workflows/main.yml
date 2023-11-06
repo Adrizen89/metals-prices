@@ -25,6 +25,15 @@ jobs:
       run: |
         echo "Python DLL Path: $PYTHON_DLL_PATH"
         ls "$PYTHON_DLL_PATH"
+    - name: Print Python version and path
+      run: |
+        python --version
+        where python
+
+    - name: List Python installation directory
+      run: |
+        ls "$(python -c "import os; import sys; print(os.path.dirname(sys.executable))")"
+      
 
     - name: Install dependencies
       run: |
