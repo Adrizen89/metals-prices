@@ -4,7 +4,7 @@
 a = Analysis(
     ['main.py'],
     pathex=['app', 'resources', '.github'],
-    binaries=[],
+    binaries=[('C:\\hostedtoolcache\\windows\\Python\\3.12.0\\x64\\python312.dll', '.')],
     datas=[('version.json', '.'), ('generate_appcast.py', '.'), ('config.ini', '.'), ('theme.qss', '.'), ('winsparkle_wrapper.py', '.'), ('LICENSE.md', '.'), ('README.md', '.'), ('requirements.txt', '.'), ('WinSparkle.dll', '.')],
     hiddenimports=[],
     hookspath=[],
