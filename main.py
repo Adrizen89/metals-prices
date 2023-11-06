@@ -28,7 +28,6 @@ def main():
     myApp = MyApp()
     app.aboutToQuit.connect(winsparkle_wrapper.cleanup_winsparkle)
     sys.exit(app.exec_())
-    
 
 
 if __name__ == "__main__":
