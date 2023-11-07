@@ -6,7 +6,6 @@ from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5 import QtWidgets
 import os
 import locale
-import winsparkle_wrapper
 
 def load_stylesheet(qss_file_path: str) -> str:
     """Load the QSS file and return the stylesheet content."""
@@ -14,9 +13,6 @@ def load_stylesheet(qss_file_path: str) -> str:
         return f.read()
     
 def main():
-    # Initialise WinSparkle
-    winsparkle_wrapper.initialize_winsparkle("https://adrizen89.github.io/metals-prices/appcast.xml")
-    winsparkle_wrapper.check_update_without_ui()
     app = QtWidgets.QApplication(sys.argv)
     locale.setlocale(locale.LC_ALL, 'fr_FR.UTF-8')
     print("Loading...")
@@ -26,7 +22,6 @@ def main():
     stylesheet = load_stylesheet(qss_file_path)
     app.setStyleSheet(stylesheet)
     myApp = MyApp()
-    app.aboutToQuit.connect(winsparkle_wrapper.cleanup_winsparkle)
     sys.exit(app.exec_())
 
 
