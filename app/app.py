@@ -10,7 +10,7 @@ import app.utils_scrapping as scrapping
 from .utils_pdf import download_pdf, delete_pdfs
 import datetime
 from datetime import timedelta
-from datetime import date
+from datetime import date, datetime
 from openpyxl import load_workbook, Workbook
 import sys
 import os
@@ -39,6 +39,8 @@ yesterday = now - timedelta(days=1)
 
 # Ajd 'vendredi'
 day_of_week = now.strftime("%A")
+date_actuelle = datetime.now()
+jour_actuel = date_actuelle.weekday()
 
 # Hier 'd/m/Y
 date_yesterday = yesterday.strftime("%d/%m/%Y")
@@ -48,6 +50,9 @@ yesterday_day_of_week = yesterday.strftime("%A")
 
 # Hier 'jeudi 01 juin 2023
 yesterday_holiday = yesterday.strftime("%A %d %B")
+
+correspondance_jours = {0: 4, 1: 0, 2: 1, 3: 2, 4: 3}
+jour_attendu = correspondance_jours.get(jour_actuel)
 
 def get_uk_holidays(year):
     # Jours fériés fixes
@@ -705,15 +710,21 @@ class MyApp(QtWidgets.QWidget):
                         replaced_value_count += 1
                         replaced_values[f"Rate {site['name']}"] = f'Date: {prev_date}, Value: {prev_value}'
                     else: 
-                        sheet.cell(row=row_number, column=1, value=date_day)
-                    
-                        # Vérifier les jours fériés et écrire la valeur appropriée dans la feuille Excel
-                        if site['cal'] == 'fr' and date_day not in holidays_french:
-                            sheet.cell(row=row_number, column=2, value=data)
-                        elif site['cal'] == 'uk' and date_day not in holidays_uk:
+                        if jour_actuel == 0:
+                            date_attendue = date_actuelle - timedelta(days=(date_actuelle.weekday() + 3))
+                            
+                        else:
+                            date_attendue = date_actuelle - timedelta(days=1)
+                            
+                        if date_day.date() == date_attendue.date() and date_day.weekday() == jour_attendu:
+                            sheet.cell(row=row_number, column=1, value=date_day)
                             sheet.cell(row=row_number, column=2, value=data)
                         else:
-                            sheet.cell(row=row_number, column=2, value="Jour non valeur")
+                            replaced_value_count += 1
+                            replaced_values[f"Rate {site['name']}"] = f'Date: {date_day}, Value: {data}'
+                            
+                            sheet.cell(row=row_number, column=1, value=date_day)
+                            sheet.cell(row=row_number, column=2, value=data)
 
                     sheet.cell(row=row_number, column=3, value=site['devise'])
                     sheet.cell(row=row_number, column=4, value=site['unit'])
