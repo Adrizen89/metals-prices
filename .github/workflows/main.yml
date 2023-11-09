@@ -21,20 +21,6 @@ jobs:
     - name: Define Python DLL path
       run: echo 'PYTHON_DLL_PATH=$(python -c "import os; import sys; print(os.path.dirname(sys.executable))")' >> $GITHUB_ENV
     
-    - name: Print Python DLL path
-      run: |
-        echo "Python DLL Path: $PYTHON_DLL_PATH"
-        ls "$PYTHON_DLL_PATH"
-    - name: Print Python version and path
-      run: |
-        python --version
-        where python
-
-    - name: List Python installation directory
-      run: |
-        ls "$(python -c "import os; import sys; print(os.path.dirname(sys.executable))")"
-
-
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -65,7 +51,7 @@ jobs:
       with:
         tag_name: ${{ steps.create_tag.outputs.new_tag }}
         release_name: Release ${{ steps.create_tag.outputs.new_tag }}
-        body: Latest build of the app
+        body: Dernière version à jour de l'application Metals_Prices.
         draft: false
         prerelease: false
 
