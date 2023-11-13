@@ -1,7 +1,7 @@
 <div align="center">
 <h1 align="center">
 <img src="https://raw.githubusercontent.com/PKief/vscode-material-icon-theme/ec559a9f6bfd399b82bb44393651661b08aaf7ba/icons/folder-markdown-open.svg" width="100" />
-<br>METALS-PRICES</h1>
+<br>METALS-PRICES v6.0.37</h1>
 <h3>◦ Récupérer les cours des métaux</h3>
 <h3>◦ Développé en Python.</h3>
 
