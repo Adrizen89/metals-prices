@@ -16,7 +16,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: '3.x'
+        python-version: '3.11'
 
     - name: Install dependencies
       run: |
@@ -26,7 +26,7 @@ jobs:
 
     - name: Create Executable
       run: |
-        pyinstaller -y -w --add-data "version.json;." --add-data "generate_appcast.py;." --add-data "config.ini;." --add-data "theme.qss;." --add-data "winsparkle_wrapper.py;." --add-data "LICENSE.md;." --add-data "README.md;." --add-data "requirements.txt;." --add-data "WinSparkle.dll;." --paths "app" --paths "resources" --paths ".github" main.py
+        pyinstaller -y -w --add-data "version.json;." --add-data "config.ini;." --add-data "theme.qss;." --add-data "winsparkle_wrapper.py;." --add-data "LICENSE.md;." --add-data "README.md;." --add-data "requirements.txt;." --add-data "WinSparkle.dll;." --paths "app" --paths "resources" --paths ".github" main.py
 
     - name: Zip the Executable Directory
       run: |
@@ -76,14 +76,3 @@ jobs:
         git add version.json
         git commit -m "Update version.json for release ${{ steps.create_tag.outputs.new_tag }}"
         git push
-
-    - name: Generate Appcast XML
-      run: python generate_appcast.py  # Supposons que generate_appcast.py est votre script
-  
-    - name: Commit and push Appcast XML
-      run: |
-       git config --local user.email "action@github.com"
-       git config --local user.name "GitHub Action"
-       git add docs/appcast.xml  # Supposons que appcast.xml est le fichier généré
-       git commit -m "Update Appcast XML for new release" -a
-       git push
