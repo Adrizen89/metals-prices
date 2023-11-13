@@ -16,7 +16,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: '3.12'
+        python-version: '3.11'
 
     - name: Define Python DLL path
       run: echo 'PYTHON_DLL_PATH=$(python -c "import os; import sys; print(os.path.dirname(sys.executable))")' >> $GITHUB_ENV
@@ -29,8 +29,7 @@ jobs:
 
     - name: Create Executable
       run: |
-        pyinstaller -y -w --add-binary "C:\hostedtoolcache\windows\Python\3.12.0\x64\python312.dll;." --add-data "version.json;." --add-data "config.ini;." --add-data "theme.qss;." --add-data "LICENSE.md;." --add-data "README.md;." --add-data "requirements.txt;." --paths "app" --paths "resources" --paths ".github" main.py
-    
+        pyinstaller -y -w --add-data "version.json;." --add-data "config.ini;." --add-data "theme.qss;." --add-data "winsparkle_wrapper.py;." --add-data "LICENSE.md;." --add-data "README.md;." --add-data "requirements.txt;." --add-data "WinSparkle.dll;." --paths "app" --paths "resources" --paths ".github" main.py
 
     - name: Zip the Executable Directory
       run: |
@@ -80,4 +79,3 @@ jobs:
         git add version.json
         git commit -m "Update version.json for release ${{ steps.create_tag.outputs.new_tag }}"
         git push
-
