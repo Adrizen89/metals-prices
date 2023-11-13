@@ -1,3 +1,4 @@
+import re
 import tkinter as tk
 from tkinter import filedialog, messagebox
 import configparser
@@ -11,6 +12,7 @@ from .utils_pdf import download_pdf, delete_pdfs
 import datetime
 from datetime import timedelta
 from datetime import date
+from datetime import datetime
 from openpyxl import load_workbook, Workbook
 import sys
 import os
@@ -34,11 +36,13 @@ from PyQt5 import QtWidgets, QtCore
 config = configparser.ConfigParser()
 config.read('config.ini')
 locale.setlocale(locale.LC_ALL, 'fr_FR.UTF-8')
-now = datetime.datetime.now().date()
+now = datetime.now().date()
 yesterday = now - timedelta(days=1)
 
 # Ajd 'vendredi'
 day_of_week = now.strftime("%A")
+date_actuelle = datetime.now()
+jour_actuel = date_actuelle.weekday()
 
 # Hier 'd/m/Y
 date_yesterday = yesterday.strftime("%d/%m/%Y")
@@ -48,6 +52,9 @@ yesterday_day_of_week = yesterday.strftime("%A")
 
 # Hier 'jeudi 01 juin 2023
 yesterday_holiday = yesterday.strftime("%A %d %B")
+
+correspondance_jours = {0: 4, 1: 0, 2: 1, 3: 2, 4: 3}
+jour_attendu = correspondance_jours.get(jour_actuel)
 
 def get_uk_holidays(year):
     # Jours fériés fixes
@@ -385,8 +392,8 @@ class MyApp(QtWidgets.QWidget):
         settings_layout.addWidget(self.select_scrapping_functions_button)
 
         # Date
-        self.start_date_edit = QtWidgets.QDateEdit(datetime.datetime.now().date())
-        self.end_date_edit = QtWidgets.QDateEdit(datetime.datetime.now().date())
+        self.start_date_edit = QtWidgets.QDateEdit(datetime.now().date())
+        self.end_date_edit = QtWidgets.QDateEdit(datetime.now().date())
 
         # Champs choix des dates
         self.start_date_edit.setCalendarPopup(True)
@@ -617,7 +624,7 @@ class MyApp(QtWidgets.QWidget):
             start_date = self.start_date_edit.date().toPyDate()
             end_date = self.end_date_edit.date().toPyDate()
         else:
-            start_date = end_date = datetime.date.today()
+            start_date = end_date = datetime.today().date()
 
          # Gestion du fichier Excel : création ou chargement
         excel_path = default_path_excel
@@ -691,6 +698,8 @@ class MyApp(QtWidgets.QWidget):
                         sheet.cell(row=row_number, column=2, value=data)
                         sheet.cell(row=row_number, column=3, value=site['devise'])
                         sheet.cell(row=row_number, column=4, value=site['unit'])
+                        self.log(f"Valeur inscrite : {data} avec la date : {date_day} pour le site {site['name']}")
+
                 else:
                     # Si plage de dates n'est pas cochée, écrire seulement la première paire de données extraites dans la feuille Excel
                     date_day, data = extracted_data
@@ -705,15 +714,43 @@ class MyApp(QtWidgets.QWidget):
                         replaced_value_count += 1
                         replaced_values[f"Rate {site['name']}"] = f'Date: {prev_date}, Value: {prev_value}'
                     else: 
-                        sheet.cell(row=row_number, column=1, value=date_day)
-                    
-                        # Vérifier les jours fériés et écrire la valeur appropriée dans la feuille Excel
-                        if site['cal'] == 'fr' and date_day not in holidays_french:
-                            sheet.cell(row=row_number, column=2, value=data)
-                        elif site['cal'] == 'uk' and date_day not in holidays_uk:
-                            sheet.cell(row=row_number, column=2, value=data)
+                        if jour_actuel == 0:
+                            date_attendue = date_actuelle - timedelta(days=(date_actuelle.weekday() + 3))
+                            
                         else:
-                            sheet.cell(row=row_number, column=2, value="Jour non valeur")
+                            date_attendue = date_actuelle - timedelta(days=1)
+                        
+                        # Expression régulière pour détecter le format "Semaine XX"
+                        semaine_regex = r"^Semaine \d{1,2}$"
+                        date_day = date_day.strip()
+                        if re.match(semaine_regex, date_day):
+                            print("Format 'Semaine XX' détecté, ignoré")
+                            sheet.cell(row=row_number, column=1, value=date_day)
+                            sheet.cell(row=row_number, column=2, value=data)
+                            self.log(f"Valeur inscrite : {data} avec la date : {date_day} pour le site {site['name']}")
+                        else:
+                            date_day = date_day.strip()
+                            try:
+                                date_day = datetime.strptime(date_day, "%d/%m/%Y")
+                                is_correct_date = date_day.date() == date_attendue.date() and date_day.weekday() == jour_attendu
+                                print(date_day)
+                            except ValueError:
+                                print("Format de date non valide")
+                                is_correct_date = False
+                            if is_correct_date:
+                                formatted_date = date_day.strftime("%d/%m/%Y")
+                                print("La date correspond, écriture dans Excel")
+                                print(f"Valeur inscrite : {data} avec la date : {formatted_date}")
+                                sheet.cell(row=row_number, column=1, value=formatted_date)
+                                sheet.cell(row=row_number, column=2, value=data)
+                                self.log(f"Valeur inscrite : {data} avec la date : {formatted_date} pour le site {site['name']}")
+                            else:
+                                replaced_value_count += 1
+                                replaced_values[f"Rate {site['name']}"] = f'Date: {date_day}, Value: {data}'
+                            
+                                sheet.cell(row=row_number, column=1, value=date_day)
+                                sheet.cell(row=row_number, column=2, value=data)
+                                self.log(f"Valeur inscrite : {data} avec la date : {date_day} pour le site {site['name']}")
 
                     sheet.cell(row=row_number, column=3, value=site['devise'])
                     sheet.cell(row=row_number, column=4, value=site['unit'])
@@ -733,12 +770,7 @@ class MyApp(QtWidgets.QWidget):
 
                             rpa_sheet.cell(row=rpa_row_number, column=3, value=prev_value)
                         else:
-                            if site['cal'] == 'fr' and not yesterday_holiday in holidays_french:
-                                rpa_sheet.cell(row=rpa_row_number, column=3, value=data)
-                            elif site['cal'] == 'uk' and not yesterday_holiday in holidays_uk:
-                                rpa_sheet.cell(row=rpa_row_number, column=3, value=data)
-                            else:
-                                rpa_sheet.cell(row=rpa_row_number, column=3, value="Jour non valeur")
+                            rpa_sheet.cell(row=rpa_row_number, column=3, value=data)
                         rpa_sheet.cell(row=rpa_row_number, column=4, value=site['devise'])
                         rpa_sheet.cell(row=rpa_row_number, column=5, value=site['unit'])
                 
