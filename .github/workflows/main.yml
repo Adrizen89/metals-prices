@@ -16,7 +16,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: '3.11'
+        python-version: '3.12'
 
     - name: Define Python DLL path
       run: echo 'PYTHON_DLL_PATH=$(python -c "import os; import sys; print(os.path.dirname(sys.executable))")' >> $GITHUB_ENV
