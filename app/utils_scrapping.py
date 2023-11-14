@@ -1207,6 +1207,125 @@ def extract_3ZN1(soup, checkbox_state=False, start_date=None, end_date=None):
             formatted_data = 'value none'
             return date_data, formatted_data
 
+def extract_ZLME(soup, checkbox_state=False, start_date=None, end_date=None):
+    
+    months = {
+            'January': '01', 'February': '02', 'March': '03', 'April': '04', 'May': '05', 
+            'June': '06', 'July': '07', 'August': '08', 'September': '09', 'October': '10',
+            'November': '11', 'December': '12'
+        }
+    if checkbox_state and start_date and end_date:
+        table = soup.find("table")
+        rows = soup.find_all("tr")
+        extracted_values = []
+        # Parcourir chaque ligne de la table en ignorant l'en-tête
+        for row in rows[1:]:
+            columns = row.find_all("td")
+
+            # Eviter les lignes qui n'ont pas assez de colonnes
+            if len(columns) < 2:
+                continue
+            
+            date_data_raw = columns[0].text.strip()
+                
+            # Conversion de la date du format "05. September 2023" à "05/09/2023"
+            day, month_name, year = date_data_raw.replace('.', '').split()
+            month_num = months.get(month_name, '00')
+            date_data = f"{day}/{month_num}/{year}"
+        
+            date_data_obj = datetime.strptime(date_data, "%d/%m/%Y").date()
+        
+            if start_date <= date_data_obj <= end_date:
+                fourth_column = columns[1]
+                data = fourth_column.text.strip()
+                formatted_data = data.replace('.', ',')
+                extracted_values.append((date_data, formatted_data))
+        
+        extracted_values.reverse()
+        return extracted_values # Retourner la liste de données extraites
+    
+    else:
+        try:
+            table = soup.find("table")
+            rows = soup.find_all("tr")
+            second_row = rows[1]
+            columns = second_row.find_all("td")
+            second_column = columns[1]
+            date_data_raw = columns[0].text.strip()
+            
+            day, month_name, year = date_data_raw.replace('.', '').split()
+            month_num = months.get(month_name, '00')
+            date_data = f"{day}/{month_num}/{year}"
+            
+            data = second_column.text.strip()
+            formatted_data = data.replace('.', ',')
+            return date_data, formatted_data
+
+        
+        except:
+            date_data = 'date none'
+            formatted_data = 'value none'
+            return date_data, formatted_data
+        
+def extract_EURX(soup, checkbox_state=False, start_date=None, end_date=None):
+    
+    months = {
+            'January': '01', 'February': '02', 'March': '03', 'April': '04', 'May': '05', 
+            'June': '06', 'July': '07', 'August': '08', 'September': '09', 'October': '10',
+            'November': '11', 'December': '12'
+        }
+    if checkbox_state and start_date and end_date:
+        table = soup.find("table")
+        rows = soup.find_all("tr")
+        extracted_values = []
+        # Parcourir chaque ligne de la table en ignorant l'en-tête
+        for row in rows[1:]:
+            columns = row.find_all("td")
+
+            # Eviter les lignes qui n'ont pas assez de colonnes
+            if len(columns) < 2:
+                continue
+            
+            date_data_raw = columns[0].text.strip()
+                
+            # Conversion de la date du format "05. September 2023" à "05/09/2023"
+            day, month_name, year = date_data_raw.replace('.', '').split()
+            month_num = months.get(month_name, '00')
+            date_data = f"{day}/{month_num}/{year}"
+        
+            date_data_obj = datetime.strptime(date_data, "%d/%m/%Y").date()
+        
+            if start_date <= date_data_obj <= end_date:
+                fourth_column = columns[1]
+                data = fourth_column.text.strip()
+                formatted_data = data.replace('.', ',')
+                extracted_values.append((date_data, formatted_data))
+        
+        extracted_values.reverse()
+        return extracted_values # Retourner la liste de données extraites
+    
+    else:
+        try:
+            table = soup.find("table")
+            rows = soup.find_all("tr")
+            second_row = rows[1]
+            columns = second_row.find_all("td")
+            second_column = columns[1]
+            date_data_raw = columns[0].text.strip()
+            
+            day, month_name, year = date_data_raw.replace('.', '').split()
+            month_num = months.get(month_name, '00')
+            date_data = f"{day}/{month_num}/{year}"
+            
+            data = second_column.text.strip()
+            formatted_data = data.replace('.', ',')
+            return date_data, formatted_data
+
+        
+        except:
+            date_data = 'date none'
+            formatted_data = 'value none'
+            return date_data, formatted_data
 
 # Extraction données pour 1AG3 (EL) Deja importé
 # def extract_1AG3(soup):
