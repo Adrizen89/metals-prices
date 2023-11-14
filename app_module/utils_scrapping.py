@@ -2,7 +2,7 @@ import configparser
 from PyPDF2 import PdfReader
 import time
 from datetime import datetime, timedelta
-from app.data_list import sites
+from app_module.data_list import sites
 import os
 from .config import get_config_value, get_pdf_path, set_config_value
 import json
