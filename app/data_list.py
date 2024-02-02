@@ -18,6 +18,8 @@ sites = [
 {"cal": "fr","src": "site","name" : "3NI1" , "metal" : "NI" ,"url" : "https://www.kme.com/fr/services/cours-des-metaux/historical/historiques-nickel-prix", "func": "extract_3NI1", "unit" : "TO", "devise": "$", "format_func" : func.format_value_3NI1},
 {"cal": "fr","src": "site","name" : "3SN1" , "metal" : "SN" ,"url" : "https://www.kme.com/fr/services/cours-des-metaux/historiques-etain-prix", "func": "extract_3SN1", "unit" : "TO", "devise": "$", "format_func" : func.format_value_3SN1},
 {"cal": "fr","src": "ext" ,"name" : "3ZN1" , "metal" : "ZN" ,"url" : "https://www.westmetall.com/en/markdaten.php?action=table&field=LME_Zn_cash", "func": "extract_3ZN1", "unit": "TO", "devise": "$", "format_func" : func.format_value_3ZN1},
+{"cal": "fr","src": "site" ,"name" : "ZLME" , "metal" : "ZLME" ,"url" : "https://www.westmetall.com/en/markdaten.php?action=table&field=Euro_MTLE", "func": "extract_ZLME", "unit": "EUR", "devise": "USD", "format_func" : func.format_value_ZLME},
+{"cal": "fr","src": "site" ,"name" : "EURX" , "metal" : "EURX" ,"url" : "https://www.westmetall.com/en/markdaten.php?action=table&field=Euro_EZB", "func": "extract_EURX", "unit": "EUR", "devise": "USD", "format_func" : func.format_value_EURX},
 # {"cal": "fr","src": "site","name" : "1AG3" , "metal" : "AG" , "url": "https://www.westmetall.com/en/markdaten.php?action=table&field=Ag", "func": "extract_1AG3", "unit" : "KG", "devise": "€", "format_func" : func.format_value_1AG3},
 ]
 

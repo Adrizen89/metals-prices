@@ -71,3 +71,9 @@ def format_value_2B16(value):
 
 def format_value_3ZN1(value):
     return value.replace('.', '').replace('.', '')
+
+def format_value_ZLME(value):
+    return value
+
+def format_value_EURX(value):
+    return value

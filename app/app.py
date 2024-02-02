@@ -38,7 +38,7 @@ config_path = get_config_path()
 print(config_path)
 config = configparser.ConfigParser()
 config.read(config_path)
-locale.setlocale(locale.LC_ALL, 'fr_FR.UTF-8')
+locale.setlocale(locale.LC_TIME, 'fr_FR')
 now = datetime.now().date()
 yesterday = now - timedelta(days=1)
 
@@ -759,8 +759,20 @@ class MyApp(QtWidgets.QWidget):
 
                  # Écrire toutes les valeurs dans l'onglet RPA
                     extracted_data = [extracted_data]
-                    print(extracted_data)
+                    print(f" Print RPA : {extracted_data} ")
                     for date_day, data in extracted_data:
+                        date_str = date_day.strip()
+                        if not re.match(r'Semaine \d+', date_str):
+                            date_obj = datetime.strptime(date_str, '%d/%m/%Y')
+                            if isinstance(date_obj, datetime):
+                                locale.setlocale(locale.LC_TIME, 'fr_FR')
+                                jour_de_la_semaine = date_obj.strftime('%A')
+                                date_formated = date_obj.strftime('%d/%m/%Y')
+                                rpa_sheet.cell(row=1, column=1, value=date_formated)
+                                rpa_sheet.cell(row=1, column=2, value=jour_de_la_semaine)
+                        else:
+                            pass
+                         
                         rpa_row_number = rpa_sheet.max_row + 1
                         rpa_sheet.cell(row=rpa_row_number, column=1, value=site['metal'])
                         rpa_sheet.cell(row=rpa_row_number, column=2, value=site['name'])
