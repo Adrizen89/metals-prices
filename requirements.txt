@@ -7,7 +7,7 @@ idna==3.4
 openpyxl==3.1.2
 PyPDF2==3.0.1
 PyQt5==5.15.10
-PyQt5-Qt5==5.15.2
+PyQt5-Qt5
 PyQt5-sip==12.13.0
 python-dateutil==2.8.2
 requests==2.31.0

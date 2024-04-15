@@ -1348,3 +1348,39 @@ def extract_EURX(soup, checkbox_state=False, start_date=None, end_date=None):
 #     # Retourner la date et la valeur de la quatrième colonne
 #     return date_data, formatted_data
 
+def extract_CUSN(soup, checkbox_state = False, start_date=None, end_date=None):
+    pdf_path = get_config_value('SETTINGS', 'pdf_path')  # Récupérer le chemin du PDF depuis les paramètres
+    name_pdf = 'Cours_metaux_template.pdf'  # Récupérer le nom du PDF depuis les paramètres
+    if not pdf_path:
+        pdf_path = os.getcwd()  # Utiliser le répertoire courant si aucun chemin n'est spécifié
+    path = f"{pdf_path}/{name_pdf}"  # Construire le chemin complet vers le fichier PDF
+    
+    try:
+        # Ouvrir le fichier PDF en mode lecture binaire
+        with open(path, "rb") as file:
+            reader = PdfReader(file)
+            page_pdf = reader.pages[0]
+            text_pdf = page_pdf.extract_text()
+            lines = text_pdf.split('\n')
+            date = None
+
+            
+
+        # Rechercher la ligne contenant "CUSN6" et extraire la valeur
+        for line in lines:
+            print(line)
+            date_match = re.search(r"COURS APPLICABLES LE : (\d{2}/\d{2}/\d{4})", line)
+            if date_match:
+                date = date_match.group(1) if date_match else "Date non trouvée"
+                pass
+            # Extraire la valeur après "CUSN6"
+            value_matches = re.findall(r"CUSN6 (\d+,\d+) EUR 1TO", line)
+            if value_matches:
+                value = value_matches[-1] if value_matches else "Valeur non trouvée"
+        
+        return date, value
+    except FileNotFoundError:
+        print("Cours SN6 pas trouvé")
+        date = 'date none'
+        formatted_data = 'value none'
+        return date, formatted_data
