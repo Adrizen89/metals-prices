@@ -21,5 +21,6 @@ sites = [
 {"cal": "fr","src": "site" ,"name" : "ZLME" , "metal" : "ZLME" ,"url" : "https://www.westmetall.com/en/markdaten.php?action=table&field=Euro_MTLE", "func": "extract_ZLME", "unit": "EUR", "devise": "USD", "format_func" : func.format_value_ZLME},
 {"cal": "fr","src": "site" ,"name" : "EURX" , "metal" : "EURX" ,"url" : "https://www.westmetall.com/en/markdaten.php?action=table&field=Euro_EZB", "func": "extract_EURX", "unit": "EUR", "devise": "USD", "format_func" : func.format_value_EURX},
 # {"cal": "fr","src": "site","name" : "1AG3" , "metal" : "AG" , "url": "https://www.westmetall.com/en/markdaten.php?action=table&field=Ag", "func": "extract_1AG3", "unit" : "KG", "devise": "€", "format_func" : func.format_value_1AG3},
+{"cal": "uk","src": "pdf" ,"name" : "CUSN" , "metal" : "CUSN" ,"url" : "https://reynolds-cuivre.fr/wp-content/uploads/2017/09/Cours_metaux_template.pdf", "func": "extract_CUSN", "unit": "TO", "devise": "€","name_pdf" : "Cours_metaux_template.pdf", "format_func" : func.format_value_CUSN}
 ]
 

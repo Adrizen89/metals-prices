@@ -1,6 +1,4 @@
 import re
-import tkinter as tk
-from tkinter import filedialog, messagebox
 import configparser
 from bs4 import BeautifulSoup
 import requests
@@ -19,7 +17,6 @@ import os
 import subprocess
 from io import StringIO
 from ressources.colors import bg_color, bg_color_light, bg_color, text_light, text_medium, text_dark
-import tkinter.messagebox as messagebox
 from app.utils_format import check_and_return_value
 import threading
 import ssl
@@ -705,6 +702,7 @@ class MyApp(QtWidgets.QWidget):
                 else:
                     # Si plage de dates n'est pas cochée, écrire seulement la première paire de données extraites dans la feuille Excel
                     date_day, data = extracted_data
+                    print(date_day, data)
                     row_number = sheet.max_row + 1
                     if date_day == 'date none' and data == 'value none':
                         # Récupérez la date et la valeur de la ligne précédente

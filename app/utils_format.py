@@ -77,3 +77,6 @@ def format_value_ZLME(value):
 
 def format_value_EURX(value):
     return value
+
+def format_value_CUSN(value):
+    return value
